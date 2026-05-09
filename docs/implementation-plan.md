@@ -16,6 +16,27 @@ Build a mobile-first Phaser prototype that proves the core experience:
 
 Implementation should happen on branch `prototype/hole-1`. Shot release and putting must avoid timing-based mechanics.
 
+## Testing Priority
+
+Testing is a high-priority deliverable for the prototype, not a cleanup task after the game is playable. Each implementation phase should include focused unit coverage for deterministic logic and Playwright coverage for browser-visible behavior before the phase is considered complete.
+
+Use unit tests for:
+
+- Shot model calculations, including power, aim, release angle, disc type, wind, and character modifiers
+- Rules and scoring, including strokes, lies, OB penalties, relief, tap-ins, and hole completion
+- Data validation for characters, discs, and hole configuration
+- Input-state helpers where behavior can be tested without a browser
+
+Use Playwright tests for:
+
+- Mobile portrait viewport rendering and canvas scaling
+- Title, character select, hole, putting, and score-summary flow
+- Touch or pointer interactions for aim, power, release-angle selection, disc selection, and putting
+- Visual and behavioral checks that important UI does not overlap unsafe areas or become unreadable on common phone sizes
+- Repeatable smoke coverage that proves the prototype can start, play through hole 1, and finish with a score
+
+Acceptance checks in every phase should be backed by automated tests wherever practical. Manual verification is still useful for feel, readability, and polish, but it should not replace automated coverage for core game behavior.
+
 ## Recommended Build Order
 
 ### Phase 1: Project Scaffold
@@ -25,6 +46,8 @@ Create the technical foundation.
 Deliverables:
 
 - Vite + TypeScript + Phaser project
+- Unit test setup
+- Playwright test setup with mobile portrait projects
 - Mobile-first canvas sizing
 - Portrait-oriented layout baseline
 - Boot, preload, title, character select, hole, and score scenes
@@ -35,6 +58,7 @@ Acceptance checks:
 - App runs locally in a browser.
 - Canvas scales correctly at common mobile viewport sizes.
 - Scene transitions work from title to character select to hole.
+- Unit and Playwright test commands run successfully in CI-friendly mode.
 
 ### Phase 2: Title Screen
 
@@ -52,6 +76,7 @@ Acceptance checks:
 - Start action is obvious on a phone screen.
 - Text is readable without zooming.
 - Nothing important sits under browser UI or unsafe screen areas.
+- Playwright verifies the title screen and start transition at mobile viewport sizes.
 
 ### Phase 3: Character Select
 
@@ -69,6 +94,7 @@ Acceptance checks:
 - Each character is readable on a narrow screen.
 - Selection clearly changes state.
 - Stats and play styles match [Characters](characters.md).
+- Unit tests validate character data, and Playwright verifies selection and confirm behavior.
 
 ### Phase 4: Hole Scene Foundation
 
@@ -88,6 +114,7 @@ Acceptance checks:
 - The player can understand the hole objective immediately.
 - OB and playable areas are visually distinct.
 - The camera modes support portrait play.
+- Playwright verifies HUD readability, safe-area layout, and initial hole scene rendering.
 
 ### Phase 5: Shot Model
 
@@ -108,6 +135,8 @@ Acceptance checks:
 - Power, aim, wind, disc type, and release angle visibly affect the throw.
 - The shot preview or aim line gives enough information before release.
 - Misses feel explainable rather than random.
+- Unit tests cover deterministic shot outcomes for representative discs, angles, wind, and goblin stats.
+- Playwright verifies shot controls can be operated with pointer/touch input.
 
 ### Phase 6: Rules And Scoring
 
@@ -127,6 +156,8 @@ Acceptance checks:
 - Normal play follows tee-to-lie-to-basket flow.
 - OB feedback is concise and clear.
 - Scoring is consistent across replayed attempts.
+- Unit tests cover legal throws, OB penalties, relief placement, scoring, and hole completion.
+- Playwright verifies visible scoring and OB feedback during play.
 
 ### Phase 7: Putting Mini Game
 
@@ -147,6 +178,8 @@ Acceptance checks:
 - Putting feels different from drives and approaches.
 - The interaction is accessible on touch screens.
 - A miss communicates why it missed.
+- Unit tests cover tap-in thresholds and putt outcome calculations.
+- Playwright verifies entering putting mode, aiming, choosing power, and resolving a putt.
 
 ### Phase 8: Game Feel Pass
 
@@ -164,6 +197,7 @@ Acceptance checks:
 - The prototype communicates the intended lighthearted tone.
 - The rules still feel serious and readable.
 - The hole can be completed smoothly in a short mobile session.
+- Playwright smoke tests cover a complete hole-1 playthrough to the score screen.
 
 ## Suggested Folder Structure
 

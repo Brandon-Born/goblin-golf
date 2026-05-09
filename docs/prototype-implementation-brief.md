@@ -34,6 +34,32 @@ Use the documented recommended stack:
 
 The prototype should stay mobile-first and portrait-only.
 
+## Testing
+
+Automated testing is a high priority for the first implementation pass. Do not treat tests as deferred polish.
+
+Set up both test layers during the initial scaffold:
+
+- Unit tests for deterministic game logic
+- Playwright tests for mobile browser behavior
+
+Unit tests should cover the systems that decide gameplay outcomes:
+
+- Shot model calculations for power, aim, release angle, disc type, wind, and character stat modifiers
+- Rules and scoring for strokes, lies, OB penalties, relief, tap-ins, and hole completion
+- Data validation for characters, discs, and hole 1 configuration
+
+Playwright tests should cover the player-visible prototype flow:
+
+- Mobile portrait viewport rendering and canvas scaling
+- Title screen start flow
+- Character selection and confirmation
+- Hole scene HUD readability
+- Touch or pointer interactions for aim, power, disc selection, release angle, and putting
+- A repeatable smoke test that reaches the score summary after completing hole 1
+
+Each feature phase should include the relevant unit and Playwright coverage before it is considered done.
+
 ## Art Direction
 
 Use a mixed first art pass:
@@ -134,4 +160,4 @@ Leave these out of the first implementation pass:
 
 ## Next Implementation Step
 
-Create branch `prototype/hole-1`, scaffold the Vite + TypeScript + Phaser app, and implement the vertical slice with readable gameplay placeholders before generating title or character art.
+Create branch `prototype/hole-1`, scaffold the Vite + TypeScript + Phaser app, add unit and Playwright test infrastructure, and implement the vertical slice with readable gameplay placeholders before generating title or character art.
