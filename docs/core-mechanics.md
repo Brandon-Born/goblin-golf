@@ -13,15 +13,17 @@ Drives and approaches use the same base controls, with distance and disc behavio
 
 ### Direction
 
-The player aims left or right from the current lie. The UI should show a projected starting direction and, if possible, a rough expected flight path.
+The player aims left or right from the current lie. On mobile, this should be controlled with a drag gesture or large touch region rather than small buttons. The UI should show a projected starting direction and, if possible, a rough expected flight path.
 
 ### Power
 
 Power controls throw distance. A simple meter is recommended for the proof of concept:
 
-- Press or click to start the meter.
-- Press or click again to set power.
+- Press and hold or tap to start the meter.
+- Release or tap again to set power.
 - Optional timing zone determines clean release quality.
+
+The power interaction should be forgiving on touch screens and should not require rapid repeated taps.
 
 ### Wind
 
@@ -51,6 +53,8 @@ Each disc can be represented by a small set of arcade stats:
 - Control
 - Wind resistance
 
+Disc selection should use large touch targets, such as a compact carousel or three-button tray near the lower portion of the screen.
+
 ### Release Angle
 
 Release angle changes the disc's flight shape.
@@ -62,6 +66,8 @@ Release angle changes the disc's flight shape.
 | Anhyzer | Outer edge angled upward | Turns against natural fade before fading back |
 
 For the first prototype, the player does not need advanced disc golf terminology beyond the labels. The UI should make the flight difference visible through icons, preview arcs, or quick animation.
+
+Release angle should be selectable with a simple mobile control, such as a three-state segmented button for hyzer, flat, and anhyzer.
 
 ### Accuracy
 
@@ -83,7 +89,7 @@ Recommended putting interaction:
 
 1. Camera shifts to a side-view lane facing the basket.
 2. The game shows a short putt arc and target zone.
-3. Player adjusts aim within a narrow range.
+3. Player adjusts aim within a narrow range using a drag or thumb-friendly control.
 4. Player sets touch with a simple strength input.
 5. The disc flies with light physics, including gravity, chain collision, and small wind drift.
 6. Result depends on aim, touch, distance, goblin putting stat, and wind.
@@ -111,3 +117,15 @@ The first hole should use familiar golf scoring:
 - Display strokes and relation to par.
 
 For the first prototype, use one par value for the single hole. Par 3 is recommended.
+
+## Rules Fidelity
+
+The game should stay close to competitive disc golf rules for normal play:
+
+- Throws are counted as strokes.
+- The next throw is taken from the lie established by the previous throw.
+- The hole is complete only when the disc is in the basket.
+- Out-of-bounds adds a penalty stroke.
+- Relief and drop zones should be represented clearly when used.
+
+Fantasy hazards should map to understandable disc golf concepts instead of creating hidden rule exceptions.

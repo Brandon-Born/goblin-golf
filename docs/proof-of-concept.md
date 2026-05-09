@@ -2,7 +2,7 @@
 
 ## Objective
 
-Create a playable vertical slice for a web-based Goblin Golf prototype. The goal is not a full game; it is a focused experience that proves the main flow and feel.
+Create a playable vertical slice for a mobile-first web-based Goblin Golf prototype. The goal is not a full game; it is a focused experience that proves the main flow and feel on a phone-sized touch screen.
 
 ## Included Screens
 
@@ -13,6 +13,7 @@ Purpose:
 - Establish the game name and playful fantasy sports tone.
 - Offer a clear start action.
 - Optionally show idle goblin animation, a basket, flying discs, or the first course background.
+- Fit naturally in portrait orientation.
 
 Minimum actions:
 
@@ -31,6 +32,7 @@ Purpose:
 - Let the player choose between three goblins.
 - Preview each goblin's play style.
 - Make the selection feel expressive, not purely statistical.
+- Keep comparison readable on a narrow screen.
 
 Minimum content per goblin:
 
@@ -47,6 +49,7 @@ Purpose:
 - Demonstrate the main shot loop from tee to basket.
 - Show how power, direction, wind, disc selection, and release angle combine.
 - Trigger putting mode near the basket.
+- Make shot controls usable with touch input.
 
 Minimum elements:
 
@@ -54,10 +57,12 @@ Minimum elements:
 - Basket position
 - Fairway or playable terrain
 - Out-of-bounds or rough area
+- At least one fantasy hazard with clear disc golf rules behavior
 - Wind indicator
 - Shot setup UI
 - Stroke counter
 - Lie marker after each throw
+- Mobile-safe touch controls
 
 ### Putting Mini Game
 
@@ -83,7 +88,7 @@ Minimum elements:
 - Character progression
 - Shop, cosmetics, or unlock economy
 - Advanced disc inventory management
-- Full rules simulation
+- Full rules simulation beyond basic scoring, lie, OB, relief, and holing out
 - Complex terrain physics
 
 ## Recommended First Milestone
@@ -94,7 +99,7 @@ The first milestone should be a non-playable or lightly interactive flow:
 2. Start button
 3. Goblin select
 4. Static single-hole scene
-5. Placeholder shot UI
+5. Placeholder mobile shot UI
 
 ## Recommended Second Milestone
 
@@ -106,6 +111,7 @@ The second milestone should make the hole playable:
 4. Landing position
 5. Stroke count
 6. Putting mode trigger
+7. Touch input support
 
 ## Recommended Third Milestone
 

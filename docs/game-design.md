@@ -26,7 +26,11 @@ The proof of concept should support a complete hole in a few minutes. Later vers
 
 ## Target Tone
 
-The tone is light, colorful, and competitive without becoming mean-spirited. Goblins can be goofy, boastful, scrappy, and overconfident. The visual style should lean toward chunky shapes, readable silhouettes, exaggerated reactions, and playful fantasy sports presentation.
+The tone is light, colorful, and competitive without becoming mean-spirited. Goblins can be goofy, boastful, scrappy, and overconfident.
+
+The game should feel whimsical in style but serious in rules. Course presentation, character animation, and fantasy hazards can be playful, but scoring, lies, out-of-bounds, relief, and putting should feel recognizable to disc golf players.
+
+The visual style should use high-quality pixel art that pays homage to classic 16-bit sports games without being restricted to historical 16-bit limitations. Use readable silhouettes, expressive animation, richer palettes, and modern UI clarity.
 
 ## Core Player Loop
 
@@ -52,4 +56,5 @@ The first proof of concept is successful if it demonstrates:
 - Hyzer/anhyzer angle is understandable through flight behavior.
 - Putting feels like a distinct mode rather than a shorter version of driving.
 - One hole can be completed from title screen to score summary.
-
+- Competitive disc golf basics are respected, especially stroke count, lie, par, OB, relief, and holing out.
+- The art direction reads as polished pixel art on a mobile screen.
