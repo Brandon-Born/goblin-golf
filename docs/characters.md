@@ -9,10 +9,10 @@ Use a 1 to 5 scale for prototype readability.
 | Stat | Meaning |
 | --- | --- |
 | Power | Maximum throw distance |
-| Accuracy | Release forgiveness and aim consistency |
+| Accuracy | Aim consistency and control forgiveness |
 | Spin | Ability to shape curves and recover flight |
 | Wind Read | Resistance to wind penalties |
-| Putting | Control during putting mini game |
+| Putting | Control during the putting mini game |
 
 ## Grib Ninesnatch
 
@@ -71,7 +71,7 @@ Personality: Loud, reckless, and delighted by any throw that scares the gallery.
 Design notes:
 
 - Longest throws with the most risk.
-- Good for showing dramatic hooks, skips, and bad releases.
+- Good for showing dramatic hooks, skips, and risky flight paths.
 - Should be fun without becoming the obvious best choice.
 
 ## Character Selection Requirements
@@ -87,3 +87,4 @@ The character select screen should show:
 
 The selected goblin should affect gameplay in the first playable prototype, even if the effects are simple multipliers.
 
+Do not add active special abilities in the first prototype. Character differences should come from stat-based modifiers only.

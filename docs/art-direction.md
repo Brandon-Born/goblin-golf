@@ -49,6 +49,7 @@ Examples:
 
 - Fairways through oversized mushrooms
 - Stone ruins as mando-style obstacles
+- Scattered bones as environmental flavor
 - Rope-marked out-of-bounds paths
 - Sparkling creek hazards
 - Goblin gallery areas
@@ -65,6 +66,9 @@ Guidelines:
 - Use crisp pixel-style icons where possible.
 - Keep text legible on mobile screens.
 - Avoid tiny ornamental borders around important controls.
-- Use clear shot meters, disc icons, and wind indicators.
+- Use clear aim, power, release-angle, disc, crosshair, and wind indicators.
 - Let menus feel playful without hiding core information.
 
+## First Prototype Asset Pass
+
+Use readable gameplay placeholders first so the shot loop can be tuned quickly. After the scaffold and screens exist, title and character presentation can receive generated pixel-art-inspired bitmap art.

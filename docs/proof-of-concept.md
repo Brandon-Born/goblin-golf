@@ -59,7 +59,7 @@ Minimum elements:
 - Out-of-bounds or rough area
 - At least one fantasy hazard with clear disc golf rules behavior
 - Wind indicator
-- Shot setup UI
+- Shot setup UI with deliberate aim, drag power, disc selection, and release angle controls
 - Stroke counter
 - Lie marker after each throw
 - Mobile-safe touch controls
@@ -75,7 +75,9 @@ Purpose:
 Minimum elements:
 
 - Side-view or basket-focused camera
-- Short putting interaction built around aim and touch
+- Crosshair aim and deliberate power selection
+- Distance-scaled wind drift
+- Auto tap-ins for very close putts
 - Wind or wobble influence if useful
 - Make/miss result
 - Score completion
@@ -106,7 +108,7 @@ The first milestone should be a non-playable or lightly interactive flow:
 The second milestone should make the hole playable:
 
 1. Basic aiming
-2. Power meter
+2. Drag power control
 3. Disc flight arc
 4. Landing position
 5. Stroke count
@@ -122,4 +124,4 @@ The third milestone should improve game feel:
 3. Hyzer/anhyzer angle
 4. Goblin-specific stat modifiers
 5. Simple score summary
-6. Animations, sounds, and UI polish
+6. Animations and UI polish

@@ -40,10 +40,10 @@ The visual style should use high-quality pixel art that pays homage to classic 1
 4. Choose a disc.
 5. Aim the throw.
 6. Set release angle: hyzer, flat, or anhyzer.
-7. Set power and release timing.
+7. Set power with a drag interaction.
 8. Watch the disc flight and landing result.
-9. Repeat until close enough to enter putting mode.
-10. Complete the hole through the putting mini game.
+9. Repeat until close enough to enter putting mode or receive an automatic tap-in.
+10. Complete the hole through the basket-focused putting mini game.
 11. Review score and return to menu or replay.
 
 ## Prototype Success Criteria
@@ -54,7 +54,8 @@ The first proof of concept is successful if it demonstrates:
 - Throw setup is readable before release.
 - Wind and disc choice visibly affect the result.
 - Hyzer/anhyzer angle is understandable through flight behavior.
-- Putting feels like a distinct mode rather than a shorter version of driving.
+- Shot execution is accessible and does not depend on timing-based release mechanics.
+- Putting feels like a distinct crosshair-and-power mode rather than a shorter version of driving.
 - One hole can be completed from title screen to score summary.
 - Competitive disc golf basics are respected, especially stroke count, lie, par, OB, relief, and holing out.
 - The art direction reads as polished pixel art on a mobile screen.

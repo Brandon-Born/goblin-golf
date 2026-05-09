@@ -14,6 +14,8 @@ Build a mobile-first Phaser prototype that proves the core experience:
 - Basic PDGA/DGPT-style scoring, lies, OB, relief, and holing out
 - High-quality pixel-art-inspired presentation
 
+Implementation should happen on branch `prototype/hole-1`. Shot release and putting must avoid timing-based mechanics.
+
 ## Recommended Build Order
 
 ### Phase 1: Project Scaffold
@@ -43,7 +45,7 @@ Deliverables:
 - Pixel-art-inspired title screen
 - Large touch-friendly start button
 - Simple animated background or idle course scene
-- Placeholder sound toggle if audio is planned soon
+- No sound controls in the first pass
 
 Acceptance checks:
 
@@ -75,6 +77,7 @@ Build the first hole as a readable play space.
 Deliverables:
 
 - Tee, fairway, basket, rough, OB, and at least one fantasy hazard
+- Ruins, mushrooms, and scattered bones as hole 1 flavor
 - Behind-the-player shot setup framing
 - Top-down flight framing
 - Stroke counter, par, distance to basket, and wind indicator
@@ -93,7 +96,7 @@ Implement drive and approach mechanics.
 Deliverables:
 
 - Aim control using touch drag or large touch region
-- Power input using press/release or forgiving timing meter
+- Power input using a drag interaction
 - Disc selection: driver, midrange, putter
 - Release angle selection: hyzer, flat, anhyzer
 - Wind influence
@@ -115,8 +118,8 @@ Deliverables:
 - Stroke count incremented on throws
 - Lie placement after legal throws
 - OB detection and one-stroke penalty
-- Relief position or drop zone support
-- Hole completion only when the disc is in the basket
+- Simple OB relief position support
+- Hole completion when the disc is in the basket or an automatic tap-in is granted
 - Score summary showing strokes and relation to par
 
 Acceptance checks:
@@ -132,8 +135,10 @@ Add the distinct close-range mode.
 Deliverables:
 
 - Trigger putting mode near the basket
-- Side-view or basket-focused camera
-- Simple aim and touch/strength interaction
+- Basket-focused camera
+- Crosshair aim and deliberate power interaction
+- Distance-scaled wind influence
+- Automatic tap-ins for very close putts
 - Light physics for putt travel
 - Make, chain hit, rim hit, and miss outcomes
 
@@ -151,7 +156,6 @@ Deliverables:
 
 - Pixel-art placeholder polish or first-pass custom assets
 - Goblin idle, throw, success, and miss reactions
-- Basic sound effects if available
 - Wind, OB, and score feedback
 - Mobile performance pass
 
@@ -185,27 +189,33 @@ src/
       wind.ts
       mobileInput.ts
     ui/
-      meters.ts
+      controls.ts
       buttons.ts
       hud.ts
 assets/
   sprites/
   backgrounds/
   ui/
-  audio/
 ```
 
 Putting can start inside `HoleScene.ts`. Move it into a dedicated scene only if it becomes large enough to justify the split.
 
-## First Questions For The Next Session
+## Resolved Startup Decisions
 
-The next implementation session should ask these before scaffolding code:
+These decisions have been made for the first implementation pass:
 
-- Should the branch remain `master`, or should new work happen on a feature branch?
-- Should the first implementation use generated placeholder art, hand-made simple pixel placeholders, or basic geometric shapes?
-- Should the first hole include a drop zone immediately, or start with OB relief only?
-- Should putting trigger automatically within a fixed distance, or should the player be able to choose a putter approach from outside that distance?
-- Should the initial prototype include sound, or leave audio out until the gameplay loop works?
+- Use branch `prototype/hole-1`.
+- Build a full vertical slice.
+- Use readable gameplay placeholders first.
+- Add generated pixel-art-inspired title and character art after the scaffold exists.
+- Keep the three documented goblins and make differences stat-based only.
+- Use no timing-based mechanics.
+- Use drag power and selected release angle for drives and approaches.
+- Use crosshair aim, deliberate power, distance-scaled wind, and auto tap-ins for putting.
+- Start with OB relief only, no drop zones.
+- Make hole 1 fantasy-themed with ruins, mushrooms, and scattered bones.
+- Support portrait orientation only.
+- Leave PWA installability and sound for later.
 
 ## Do Not Expand Scope Yet
 
@@ -218,4 +228,3 @@ Avoid adding these until the first hole is playable:
 - Advanced disc inventories
 - Full PDGA edge-case simulation
 - Desktop-specific UI
-

@@ -18,7 +18,7 @@ Recommended baseline:
 
 PixiJS is a strong rendering engine, but it is lower-level. It is a good fit when the project needs maximum rendering control and is willing to build more game systems manually.
 
-For Goblin Golf, the scaling risk is not raw rendering. The scaling risk is organizing scenes, inputs, cameras, shot states, animation timing, assets, and physics rules as the game grows. Phaser gives the project a more complete game framework from the start.
+For Goblin Golf, the scaling risk is not raw rendering. The scaling risk is organizing scenes, inputs, cameras, shot states, animation sequencing, assets, and physics rules as the game grows. Phaser gives the project a more complete game framework from the start.
 
 ## Initial Architecture
 
@@ -57,6 +57,7 @@ Recommended assumptions:
 - Controls should use taps, holds, and drags.
 - Primary controls should be reachable near the lower half of the screen.
 - Game systems should avoid requiring precise cursor control.
+- Shot release and putting should avoid timing-based mechanics.
 - Performance should target mid-range phones, not only desktop browsers.
 
 ## Physics Direction
@@ -70,6 +71,6 @@ The first implementation should model only the behavior players can clearly unde
 - Wind pushes flight and changes distance.
 - Disc type adjusts range, control, and stability.
 - Hyzer and anhyzer adjust curve shape.
-- Character stats modify forgiveness and extremes.
+- Character stats modify distance, control, wind resistance, and putting forgiveness.
 
-The system should be deterministic enough to tune, with just enough release imperfection to make timing and character stats matter.
+The system should be deterministic enough to tune, with misses explained by power, angle, wind, disc choice, lie context, and character stats rather than reflex timing.

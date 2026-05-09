@@ -17,13 +17,13 @@ The player aims left or right from the current lie. On mobile, this should be co
 
 ### Power
 
-Power controls throw distance. A simple meter is recommended for the proof of concept:
+Power controls throw distance. The proof of concept should use a deliberate drag interaction:
 
-- Press and hold or tap to start the meter.
-- Release or tap again to set power.
-- Optional timing zone determines clean release quality.
+- Drag farther to request more power.
+- Show the selected power before release.
+- Let the player confirm or release the throw without a reflex timing challenge.
 
-The power interaction should be forgiving on touch screens and should not require rapid repeated taps.
+The power interaction should be forgiving on touch screens and should not require rapid repeated taps or timing windows.
 
 ### Wind
 
@@ -71,7 +71,7 @@ Release angle should be selectable with a simple mobile control, such as a three
 
 ### Accuracy
 
-Accuracy can combine character stats and release timing. A poor release should shift the initial direction, reduce distance, or add extra wobble.
+Accuracy should come from deliberate aim, character stats, disc control, wind, and lie context. The first prototype should not use timing-based release accuracy. Misses can still shift direction, reduce distance, or add wobble, but those results should come from understandable shot choices and stat modifiers.
 
 ## Putting Mini Game
 
@@ -87,14 +87,14 @@ Recommended prototype direction:
 
 Recommended putting interaction:
 
-1. Camera shifts to a side-view lane facing the basket.
-2. The game shows a short putt arc and target zone.
-3. Player adjusts aim within a narrow range using a drag or thumb-friendly control.
-4. Player sets touch with a simple strength input.
-5. The disc flies with light physics, including gravity, chain collision, and small wind drift.
-6. Result depends on aim, touch, distance, goblin putting stat, and wind.
+1. Camera shifts to a basket-focused view.
+2. The game shows a crosshair aimed at or near the basket.
+3. Player adjusts aim within a readable range using a drag or thumb-friendly control.
+4. Player sets power deliberately.
+5. The disc flies with light physics, including gravity, chain collision, and wind drift.
+6. Result depends on aim, power, distance, goblin putting stat, and distance-scaled wind.
 
-Putting should avoid adding too many new variables. Since normal shots already use direction, power, wind, disc selection, and release angle, putting should reduce the problem to touch and aim with readable physical feedback.
+Putting should avoid adding too many new variables. Since normal shots already use direction, power, wind, disc selection, and release angle, putting should reduce the problem to crosshair aim and power with readable physical feedback. Very close putts should become automatic tap-ins.
 
 ## Character Stats
 
@@ -126,6 +126,6 @@ The game should stay close to competitive disc golf rules for normal play:
 - The next throw is taken from the lie established by the previous throw.
 - The hole is complete only when the disc is in the basket.
 - Out-of-bounds adds a penalty stroke.
-- Relief and drop zones should be represented clearly when used.
+- Relief should be represented clearly. Drop zones can be added later if a future hole needs one.
 
 Fantasy hazards should map to understandable disc golf concepts instead of creating hidden rule exceptions.

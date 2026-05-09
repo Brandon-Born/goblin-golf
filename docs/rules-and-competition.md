@@ -26,7 +26,7 @@ The first playable hole should model these concepts:
 - Completing the hole by holing out
 - Out-of-bounds penalty
 - Relief from out-of-bounds
-- Drop zone support if the hole needs one
+- Automatic tap-ins for very close putts
 
 ## Out Of Bounds
 
@@ -42,7 +42,7 @@ Examples:
 Prototype behavior:
 
 - If the disc lands OB, add one penalty stroke.
-- Move the lie to the appropriate relief position or drop zone.
+- Move the lie to a clear relief position.
 - Clearly explain the result with concise feedback.
 
 The player-facing language can stay simple: "Out of bounds. One penalty stroke."
@@ -69,7 +69,7 @@ The game should communicate real disc golf ideas through approachable presentati
 - Par
 - Stroke
 - OB
-- Drop zone
+- Relief
 - Wind
 - Disc stability
 - Hyzer and anhyzer
@@ -89,6 +89,6 @@ Reasonable simplifications:
 - No lost-disc search timer.
 - No provisional throws.
 - No full competition manual procedures.
+- No drop zones in the first prototype.
 
 The important part is that normal play, OB, relief, and scoring feel consistent with real disc golf.
-

@@ -6,14 +6,14 @@ Goblin Golf should be designed primarily for mobile web play. Desktop support ca
 
 Recommended default:
 
-- Portrait orientation first
+- Portrait orientation only for the first prototype
 - One-handed friendly controls where possible
 - Touch-first interaction
 - Large readable UI elements
 - Short session length
 - Fast load time
 
-The game can support landscape later if it improves shot readability, but portrait should drive the first UI and camera decisions.
+The game can support landscape later if it improves shot readability, but the first implementation should not add landscape-specific layout work.
 
 ## Screen Priorities
 
@@ -53,9 +53,9 @@ The UI should pull back during disc flight so the player can read the result.
 Primary information:
 
 - Basket
-- Putt path or lane
-- Aim/touch control
-- Wind or wobble if active
+- Crosshair aim
+- Power control
+- Distance-scaled wind drift
 
 Putting should avoid dense controls. The mini game should feel focused and readable on a small screen.
 
@@ -68,8 +68,9 @@ Recommended control language:
 - Drag to aim
 - Tap to cycle disc
 - Tap to cycle release angle
-- Press and release for power
-- Drag or tap within a small putting lane
+- Drag to set shot power
+- Drag a crosshair to aim putts
+- Set putt power deliberately
 
 Avoid tiny buttons, hover-only behavior, and inputs that require precise cursor control.
 
@@ -105,8 +106,7 @@ The mobile version should support simple, forgiving input.
 Guidelines:
 
 - Do not require fast repeated tapping.
-- Provide generous timing windows.
+- Do not require timing windows for shot release or putting.
 - Make wind and shot angle visible, not just numeric.
 - Use icons with text labels for core controls until players learn them.
 - Avoid color-only communication for shot quality, disc type, or warnings.
-

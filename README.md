@@ -17,6 +17,7 @@ The visual style should use polished pixel art that pays homage to classic 16-bi
 - [Technical Direction](docs/technical-direction.md)
 - [Mobile-First Design](docs/mobile-first-design.md)
 - [Implementation Plan](docs/implementation-plan.md)
+- [Prototype Implementation Brief](docs/prototype-implementation-brief.md)
 - [Open Questions](docs/open-questions.md)
 
 ## Initial Prototype Goal
@@ -30,6 +31,8 @@ The first version should include:
 - Title screen
 - Goblin select with three character options
 - One complete disc golf hole
-- Drive/approach shot system using power, direction, wind, disc selection, and hyzer/anhyzer angle
-- Separate putting mini game once the disc is near the basket
+- Drive/approach shot system using deliberate aim, drag power, wind, disc selection, and hyzer/anhyzer angle
+- Separate basket-focused putting mini game with crosshair aim, power choice, distance-scaled wind, and auto tap-ins
 - Basic scoring for the hole
+
+The first playable prototype should not use timing-based release mechanics. Accessibility and deliberate shot planning take priority over reflex tests.
