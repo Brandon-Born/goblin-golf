@@ -16,6 +16,7 @@ The visual style should use polished pixel art that pays homage to classic 16-bi
 - [Rules And Competition Direction](docs/rules-and-competition.md)
 - [Technical Direction](docs/technical-direction.md)
 - [Mobile-First Design](docs/mobile-first-design.md)
+- [Implementation Plan](docs/implementation-plan.md)
 - [Open Questions](docs/open-questions.md)
 
 ## Initial Prototype Goal
