@@ -1,0 +1,286 @@
+:root {
+  color: #f6f0d2;
+  background: #142018;
+  font-family:
+    "Trebuchet MS",
+    "Segoe UI",
+    system-ui,
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+
+body {
+  min-width: 320px;
+}
+
+canvas {
+  display: block;
+}
+
+.hole-controls {
+  position: fixed;
+  left: 50%;
+  bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 20;
+  display: grid;
+  width: min(374px, calc(100vw - 16px));
+  transform: translateX(-50%);
+  gap: 6px;
+  color: #f6f0d2;
+}
+
+.hole-controls--setup,
+.hole-controls--putting {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+}
+
+.hole-controls--setup .status-panel,
+.hole-controls--putting .status-panel,
+.hole-controls--setup .screen-state,
+.hole-controls--putting .screen-state,
+.hole-controls--setup .button-grid,
+.hole-controls--putting .button-grid {
+  grid-column: 1 / -1;
+}
+
+.hole-controls.is-locked {
+  opacity: 0.95;
+}
+
+.status-panel,
+.control-card,
+.power-pad,
+.screen-state {
+  border: 2px solid rgba(216, 198, 106, 0.78);
+  border-radius: 6px;
+  background: rgba(20, 32, 24, 0.94);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.32);
+}
+
+.status-panel {
+  display: grid;
+  gap: 2px;
+  padding: 7px 9px;
+}
+
+.status-panel strong {
+  font-size: 13px;
+  line-height: 1.1;
+}
+
+.status-panel span {
+  color: #dceab5;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.split-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.screen-state {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  overflow: hidden;
+}
+
+.screen-state-row {
+  min-width: 0;
+  padding: 6px 7px;
+}
+
+.screen-state-row:nth-child(2n) {
+  border-left: 1px solid rgba(216, 198, 106, 0.34);
+}
+
+.screen-state-row:nth-child(n + 3) {
+  border-top: 1px solid rgba(216, 198, 106, 0.34);
+}
+
+.screen-state dt {
+  margin: 0 0 2px;
+  color: #cfe4a4;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.screen-state dd {
+  margin: 0;
+  color: #f6f0d2;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.readout {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 9px;
+}
+
+.readout + .readout {
+  border-left: 1px solid rgba(216, 198, 106, 0.42);
+}
+
+.readout-label {
+  color: #cfe4a4;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.readout-value {
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.power-pad {
+  display: grid;
+  grid-template-columns: minmax(82px, 1fr) 40px;
+  align-items: center;
+  min-height: 58px;
+  padding: 7px 9px;
+  gap: 8px;
+  touch-action: none;
+}
+
+.power-label {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.power-track {
+  position: relative;
+  width: 32px;
+  height: 44px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 2px solid #f6f0d2;
+  border-radius: 5px;
+  background: #1b241a;
+}
+
+.power-fill {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(#f07b53, #d8c66a);
+}
+
+.power-thumb {
+  position: absolute;
+  left: 50%;
+  width: 46px;
+  height: 4px;
+  border-radius: 4px;
+  background: #f6f0d2;
+  transform: translate(-50%, 50%);
+}
+
+.power-hint {
+  display: none;
+  color: #cfe4a4;
+  font-size: 13px;
+  line-height: 1.15;
+}
+
+.button-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.hole-controls--setup .button-grid {
+  grid-template-columns: 1fr 1fr 1.15fr;
+}
+
+.button-grid .primary-action {
+  grid-column: 1 / -1;
+}
+
+.hole-controls--setup .button-grid .primary-action,
+.hole-controls--putting .button-grid.single-action .primary-action {
+  grid-column: auto;
+}
+
+.button-grid.single-action {
+  grid-template-columns: 1fr;
+}
+
+.hole-controls--putting .button-grid.single-action {
+  grid-template-columns: 1fr 1fr;
+}
+
+button {
+  min-height: 44px;
+  border: 2px solid #d8c66a;
+  border-radius: 6px;
+  background: #24351f;
+  color: #f6f0d2;
+  font: 700 14px/1.1 "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+  touch-action: manipulation;
+}
+
+button:active {
+  background: #425b2a;
+}
+
+button.primary-action {
+  border-color: #f6f0d2;
+  background: #6a8732;
+  color: #10150f;
+}
+
+button:disabled {
+  opacity: 0.72;
+}
+
+@media (min-width: 760px) and (min-height: 620px) {
+  .hole-controls {
+    top: 80px;
+    right: max(16px, calc(50vw - 460px));
+    bottom: auto;
+    left: auto;
+    width: 260px;
+    transform: none;
+  }
+
+  .hole-controls--setup,
+  .hole-controls--putting {
+    grid-template-columns: 1fr;
+  }
+
+  .hole-controls--setup .button-grid,
+  .hole-controls--putting .button-grid.single-action {
+    grid-template-columns: 1fr;
+  }
+
+  .hole-controls--setup .button-grid .primary-action,
+  .hole-controls--putting .button-grid.single-action .primary-action {
+    grid-column: 1 / -1;
+  }
+}
