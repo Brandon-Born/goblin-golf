@@ -30,6 +30,7 @@ describe("game session putting flow", () => {
     });
     expect(session.holeState).toEqual({
       lie: HOLE_1.basket,
+      lieQuality: "fairway",
       strokes: 3,
       complete: true,
       penaltyStrokes: 0,

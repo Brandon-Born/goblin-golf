@@ -85,6 +85,22 @@ export const HOLE_1: HoleConfig = {
   reliefPoint: { x: 120, y: 760 },
   puttingRange: 90,
   tapInRange: 18,
+  windZones: [
+    {
+      id: "left-tailwind",
+      label: "Moss Tailwind",
+      rect: { x: 42, y: 510, width: 98, height: 280 },
+      directionDegrees: -90,
+      strength: 1.7,
+    },
+    {
+      id: "right-crosswind",
+      label: "Ruin Crosswind",
+      rect: { x: 206, y: 360, width: 104, height: 340 },
+      directionDegrees: 180,
+      strength: 2.1,
+    },
+  ],
 };
 
 export function getCharacterById(id: string): Character | undefined {
@@ -145,6 +161,12 @@ export function validateHoleConfig(hole: HoleConfig): string[] {
   if (!pointInBounds(hole.tee, hole)) errors.push("Hole tee must be in bounds.");
   if (!pointInBounds(hole.basket, hole)) errors.push("Hole basket must be in bounds.");
   if (!pointInBounds(hole.reliefPoint, hole)) errors.push("Hole relief point must be in bounds.");
+  for (const zone of hole.windZones ?? []) {
+    if (!zone.id) errors.push("Wind zone id is required.");
+    if (!zone.label) errors.push("Wind zone label is required.");
+    if (zone.rect.width <= 0 || zone.rect.height <= 0) errors.push(`Wind zone ${zone.id} must have positive size.`);
+    if (zone.strength <= 0) errors.push(`Wind zone ${zone.id} strength must be greater than zero.`);
+  }
 
   return errors;
 }

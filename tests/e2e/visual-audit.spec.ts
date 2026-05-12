@@ -65,10 +65,10 @@ async function throwUntilPutting(page: Page, maxThrows = 5) {
 
 test("visual audit of the playable prototype", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "Start prototype" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start round" })).toBeVisible();
   await page.screenshot({ path: "test-results/visual-audit/01-title.png", fullPage: true });
 
-  await page.getByRole("button", { name: "Start prototype" }).click();
+  await page.getByRole("button", { name: "Start round" }).click();
   await expect(page.getByRole("button", { name: "Select Grib Ninesnatch" })).toBeVisible();
   await page.screenshot({ path: "test-results/visual-audit/02-character-select.png", fullPage: true });
 
@@ -90,7 +90,7 @@ test("visual audit of the playable prototype", async ({ page }) => {
   await page.screenshot({ path: "test-results/visual-audit/04-hyzer-flight-path.png", fullPage: true });
 
   await page.goto("/");
-  await page.getByRole("button", { name: "Start prototype" }).click();
+  await page.getByRole("button", { name: "Start round" }).click();
   await page.getByRole("button", { name: "Select Morga Mosswhack" }).click();
   await page.getByRole("button", { name: "Confirm goblin" }).click();
   await setPower(page, "Throw power", 0.84);
@@ -106,6 +106,6 @@ test("visual audit of the playable prototype", async ({ page }) => {
   await page.mouse.move(195, 300);
   await page.mouse.up();
   await page.getByRole("button", { name: "Release putt" }).click();
-  await expect(page.getByText("Score Summary")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play again" })).toBeVisible();
   await page.screenshot({ path: "test-results/visual-audit/06-score-summary.png", fullPage: true });
 });

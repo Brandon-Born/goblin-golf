@@ -1,5 +1,6 @@
 export type ReleaseAngle = "hyzer" | "flat" | "anhyzer";
 export type DiscType = "driver" | "midrange" | "putter";
+export type LieQuality = "fairway" | "rough" | "scramble" | "relief";
 
 export interface Vector2 {
   x: number;
@@ -37,6 +38,12 @@ export interface Wind {
   strength: number;
 }
 
+export interface WindZone extends Wind {
+  id: string;
+  label: string;
+  rect: { x: number; y: number; width: number; height: number };
+}
+
 export interface HoleConfig {
   id: string;
   name: string;
@@ -47,6 +54,7 @@ export interface HoleConfig {
   reliefPoint: Vector2;
   puttingRange: number;
   tapInRange: number;
+  windZones?: readonly WindZone[];
 }
 
 export interface ShotInput {
@@ -65,10 +73,44 @@ export interface ShotResult {
   inBounds: boolean;
   reliefApplied: boolean;
   penaltyStroke: number;
+  startLieQuality: LieQuality;
+  lieQuality: LieQuality;
+  requestedPower: number;
+  effectivePower: number;
+  routeWind: Wind;
+  routeWindZones: string[];
+}
+
+export interface ShotForecast {
+  start: Vector2;
+  likelyLanding: Vector2;
+  likelyLie: Vector2;
+  likelyDistance: number;
+  likelyCurve: number;
+  inBoundsLikely: boolean;
+  reliefLikely: boolean;
+  startLieQuality: LieQuality;
+  likelyLieQuality: LieQuality;
+  requestedPower: number;
+  effectivePower: number;
+  maxPower: number;
+  controlledPower: number;
+  routeWind: Wind;
+  routeWindZones: string[];
+  landingZone: {
+    center: Vector2;
+    radiusX: number;
+    radiusY: number;
+    rotationDegrees: number;
+  };
+  pathReveal: number;
+  confidence: "high" | "medium" | "low";
+  risk: "safe" | "putt" | "tap-in" | "ob-risk";
 }
 
 export interface HoleState {
   lie: Vector2;
+  lieQuality?: LieQuality;
   strokes: number;
   complete: boolean;
   penaltyStrokes: number;

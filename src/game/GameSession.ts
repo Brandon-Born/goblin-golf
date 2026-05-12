@@ -5,6 +5,7 @@ import type {
   HoleState,
   ReleaseAngle,
   ShotInput,
+  ShotForecast,
   ShotResult,
   Vector2,
   Wind,
@@ -13,8 +14,10 @@ import { CHARACTERS, DISCS, HOLE_1 } from "./data";
 import {
   applyShotResult,
   applyTapIn,
+  calculateShotForecast,
   calculateShot,
   distanceBetween,
+  getStateLieQuality,
   isPuttingAvailable,
   isTapInAvailable,
   scoreRelativeToPar,
@@ -43,6 +46,7 @@ export class GameSession {
   selectedCharacter: Character = CHARACTERS[0];
   holeState: HoleState = {
     lie: { ...HOLE_1.tee },
+    lieQuality: "fairway",
     strokes: 0,
     complete: false,
     penaltyStrokes: 0,
@@ -71,6 +75,10 @@ export class GameSession {
     return distanceBetween(this.holeState.lie, HOLE_1.basket);
   }
 
+  get lieQuality() {
+    return getStateLieQuality(this.holeState, HOLE_1);
+  }
+
   get mode(): ShotMode {
     if (this.holeState.complete) {
       return "complete";
@@ -83,6 +91,7 @@ export class GameSession {
     this.selectedCharacter = character;
     this.holeState = {
       lie: { ...HOLE_1.tee },
+      lieQuality: "fairway",
       strokes: 0,
       complete: false,
       penaltyStrokes: 0,
@@ -105,6 +114,14 @@ export class GameSession {
     this.holeState = applyShotResult(this.holeState, HOLE_1, result);
     this.lastShot = result;
     return result;
+  }
+
+  previewThrow(input: ShotInput) {
+    return this.forecastThrow(input);
+  }
+
+  forecastThrow(input: ShotInput): ShotForecast {
+    return calculateShotForecast(this.holeState, this.selectedCharacter, HOLE_1, PROTOTYPE_WIND, input);
   }
 
   putt(input: PuttInput) {
