@@ -1,6 +1,18 @@
 :root {
-  color: #f6f0d2;
-  background: #142018;
+  --gg-ink: #10150f;
+  --gg-night: #142018;
+  --gg-panel: rgba(20, 32, 24, 0.94);
+  --gg-panel-strong: #24351f;
+  --gg-panel-pressed: #425b2a;
+  --gg-cream: #f6f0d2;
+  --gg-mint: #dceab5;
+  --gg-leaf: #cfe4a4;
+  --gg-gold: #d8c66a;
+  --gg-gold-bright: #e2d36c;
+  --gg-orange: #f07b53;
+  --gg-shadow: rgba(0, 0, 0, 0.32);
+  color: var(--gg-cream);
+  background: var(--gg-night);
   font-family:
     "Trebuchet MS",
     "Segoe UI",
@@ -26,6 +38,7 @@ body,
 
 body {
   min-width: 320px;
+  background: var(--gg-night);
 }
 
 canvas {
@@ -41,7 +54,7 @@ canvas {
   width: min(374px, calc(100vw - 16px));
   transform: translateX(-50%);
   gap: 6px;
-  color: #f6f0d2;
+  color: var(--gg-cream);
 }
 
 .hole-controls--setup,
@@ -68,8 +81,8 @@ canvas {
 .screen-state {
   border: 2px solid rgba(216, 198, 106, 0.78);
   border-radius: 6px;
-  background: rgba(20, 32, 24, 0.94);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.32);
+  background: var(--gg-panel);
+  box-shadow: 0 10px 24px var(--gg-shadow);
 }
 
 .status-panel {
@@ -84,7 +97,7 @@ canvas {
 }
 
 .status-panel span {
-  color: #dceab5;
+  color: var(--gg-mint);
   font-size: 12px;
   line-height: 1.2;
 }
@@ -116,18 +129,19 @@ canvas {
 
 .screen-state dt {
   margin: 0 0 2px;
-  color: #cfe4a4;
+  color: var(--gg-leaf);
   font-size: 10px;
   line-height: 1;
 }
 
 .screen-state dd {
   margin: 0;
-  color: #f6f0d2;
+  color: var(--gg-cream);
   font-size: 12px;
   font-weight: 800;
   line-height: 1.1;
   overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .readout {
@@ -142,7 +156,7 @@ canvas {
 }
 
 .readout-label {
-  color: #cfe4a4;
+  color: var(--gg-leaf);
   font-size: 12px;
   line-height: 1;
 }
@@ -188,7 +202,7 @@ canvas {
   right: 0;
   bottom: 0;
   left: 0;
-  background: linear-gradient(#f07b53, #d8c66a);
+  background: linear-gradient(var(--gg-orange), var(--gg-gold));
 }
 
 .power-thumb {
@@ -197,13 +211,13 @@ canvas {
   width: 46px;
   height: 4px;
   border-radius: 4px;
-  background: #f6f0d2;
+  background: var(--gg-cream);
   transform: translate(-50%, 50%);
 }
 
 .power-hint {
   display: none;
-  color: #cfe4a4;
+  color: var(--gg-leaf);
   font-size: 13px;
   line-height: 1.15;
 }
@@ -236,27 +250,79 @@ canvas {
 }
 
 button {
-  min-height: 44px;
-  border: 2px solid #d8c66a;
+  min-height: 46px;
+  padding: 0 12px;
+  border: 2px solid var(--gg-gold);
   border-radius: 6px;
-  background: #24351f;
-  color: #f6f0d2;
-  font: 700 14px/1.1 "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+  background: linear-gradient(#2b4025, var(--gg-panel-strong));
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.08),
+    0 5px 0 rgba(0, 0, 0, 0.2);
+  color: var(--gg-cream);
+  font: 800 14px/1.1 "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+  letter-spacing: 0;
   touch-action: manipulation;
 }
 
 button:active {
-  background: #425b2a;
+  background: var(--gg-panel-pressed);
+  box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.24);
+  transform: translateY(1px);
 }
 
 button.primary-action {
-  border-color: #f6f0d2;
+  border-color: var(--gg-cream);
   background: #6a8732;
-  color: #10150f;
+  color: var(--gg-ink);
 }
 
 button:disabled {
   opacity: 0.72;
+}
+
+.scene-overlay {
+  position: fixed;
+  left: 50%;
+  z-index: 20;
+  display: grid;
+  gap: 8px;
+  width: min(330px, calc(100vw - 28px));
+  transform: translateX(-50%);
+}
+
+.scene-overlay--title,
+.scene-overlay--score {
+  bottom: max(44px, calc(env(safe-area-inset-bottom) + 34px));
+}
+
+.scene-overlay--character {
+  bottom: max(18px, calc(env(safe-area-inset-bottom) + 14px));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: min(354px, calc(100vw - 20px));
+}
+
+.scene-overlay--character .primary-action {
+  grid-column: 1 / -1;
+}
+
+.scene-choice {
+  min-width: 0;
+  padding: 0 6px;
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scene-choice.is-selected {
+  border-color: var(--gg-cream);
+  background: linear-gradient(#7b9639, #5f7c30);
+  color: var(--gg-ink);
+}
+
+.scene-primary {
+  min-height: 50px;
+  font-size: 16px;
 }
 
 @media (min-width: 760px) and (min-height: 620px) {
@@ -282,5 +348,46 @@ button:disabled {
   .hole-controls--setup .button-grid .primary-action,
   .hole-controls--putting .button-grid.single-action .primary-action {
     grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 380px), (max-height: 720px) {
+  .hole-controls {
+    gap: 5px;
+  }
+
+  .status-panel {
+    padding: 6px 8px;
+  }
+
+  .status-panel span {
+    font-size: 11px;
+  }
+
+  .screen-state-row {
+    padding: 5px 6px;
+  }
+
+  .screen-state dd {
+    font-size: 11px;
+  }
+
+  .readout {
+    padding: 6px 8px;
+  }
+
+  .readout-value {
+    font-size: 14px;
+  }
+
+  .power-pad {
+    min-height: 52px;
+    padding: 6px 8px;
+  }
+
+  button {
+    min-height: 42px;
+    padding: 0 8px;
+    font-size: 13px;
   }
 }

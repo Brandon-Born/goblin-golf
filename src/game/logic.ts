@@ -1,12 +1,25 @@
 import { getDiscById } from "./data";
-import type { Character, Disc, HoleConfig, HoleState, ShotInput, ShotResult, Vector2, Wind } from "./types";
+import type {
+  Character,
+  Disc,
+  HoleConfig,
+  HoleState,
+  LieQuality,
+  ShotForecast,
+  ShotInput,
+  ShotResult,
+  Vector2,
+  Wind,
+} from "./types";
 
 const DEG_TO_RAD = Math.PI / 180;
 const BASKET_CATCH_RADIUS = 8;
+const RELIEF_MARGIN = 6;
 
 export function createInitialHoleState(hole: HoleConfig): HoleState {
   return {
     lie: { ...hole.tee },
+    lieQuality: "fairway",
     strokes: 0,
     complete: false,
     penaltyStrokes: 0,
@@ -24,41 +37,97 @@ export function calculateShot(
     throw new Error("Cannot throw after the hole is complete.");
   }
 
-  const disc = getDiscById(input.disc);
-  const start = { ...state.lie };
-  const power = clamp(input.power, 0, 1);
-  const aim = unitFromDegrees(input.aimDegrees);
-  const right = { x: -aim.y, y: aim.x };
-  const windVector = unitFromDegrees(wind.directionDegrees);
-  const windStrength = Math.max(0, wind.strength);
-  const tailWind = dot(windVector, aim) * windStrength;
-  const crossWind = dot(windVector, right) * windStrength;
-  const windHandling = (character.stats.windRead + disc.windResistance) / 10;
-  const control = (character.stats.accuracy + disc.control) / 10;
-  const distance =
-    disc.distance *
-    (0.35 + power * 0.75) *
-    statMultiplier(character.stats.power, 0.08) *
-    (1 + tailWind * 0.035 * (1 - windHandling * 0.55));
-  const curve =
-    releaseCurve(input.releaseAngle, character.stats.spin, disc) +
-    crossWind * 9 * (1 - windHandling * 0.55) +
-    (1 - control) * releaseBias(input.releaseAngle) * 5;
-  const landing = {
-    x: start.x + aim.x * distance + right.x * curve,
-    y: start.y + aim.y * distance + right.y * curve,
-  };
-  const inBounds = isPointInBounds(landing, hole);
+  const shot = resolveShotPhysics(state, character, hole, wind, input);
+  const inBounds = isPointInBounds(shot.landing, hole);
+  const finalLie = inBounds ? shot.landing : resolveReliefLie(shot.landing, hole);
 
   return {
-    start,
-    flightLanding: landing,
-    landing: inBounds ? landing : { ...hole.reliefPoint },
-    distance: distanceBetween(start, landing),
-    curve,
+    start: shot.start,
+    flightLanding: shot.landing,
+    landing: finalLie,
+    distance: distanceBetween(shot.start, shot.landing),
+    curve: shot.curve,
     inBounds,
     reliefApplied: !inBounds,
     penaltyStroke: inBounds ? 0 : 1,
+    startLieQuality: shot.startLieQuality,
+    lieQuality: inBounds ? getLieQuality(finalLie, hole) : "relief",
+    requestedPower: shot.requestedPower,
+    effectivePower: shot.effectivePower,
+    routeWind: shot.routeWind,
+    routeWindZones: shot.routeWindZones,
+  };
+}
+
+export function calculateShotForecast(
+  state: HoleState,
+  character: Character,
+  hole: HoleConfig,
+  wind: Wind,
+  input: ShotInput,
+): ShotForecast {
+  if (state.complete) {
+    throw new Error("Cannot preview after the hole is complete.");
+  }
+
+  const shot = resolveShotPhysics(state, character, hole, wind, input);
+  const disc = getDiscById(input.disc);
+  const lieQuality = getStateLieQuality(state, hole);
+  const lie = lieModifiers(lieQuality);
+  const inBounds = isPointInBounds(shot.landing, hole);
+  const likelyLie = inBounds ? shot.landing : resolveReliefLie(shot.landing, hole);
+  const control = (character.stats.accuracy + disc.control) / 10;
+  const windHandling = (character.stats.windRead + disc.windResistance) / 10;
+  const powerPressure = clamp(
+    (shot.effectivePower - lie.controlledPower) / Math.max(0.01, lie.maxPower - lie.controlledPower),
+    0,
+    1,
+  );
+  const windPressure = Math.max(0, shot.routeWind.strength) * (1 - windHandling * 0.46);
+  const fadePressure = Math.abs(shot.curve) * 0.18 + Math.abs(3 - disc.stability) * 2.2;
+  const distancePressure = Math.max(40, shot.distance) / 100;
+  const forwardRadius =
+    (10 + distancePressure * 6.5 + shot.effectivePower * 16 * (1 - control * 0.55) + windPressure * 4.5) *
+    lie.forecastMultiplier *
+    (1 + powerPressure * 0.7);
+  const lateralRadius =
+    (12 + distancePressure * 8 + (1 - control) * 32 + windPressure * 5.5 + fadePressure) *
+    lie.forecastMultiplier *
+    (1 + powerPressure * 0.55);
+  const radius = Math.hypot(forwardRadius, lateralRadius);
+  const basketDistance = distanceBetween(likelyLie, hole.basket);
+
+  return {
+    start: shot.start,
+    likelyLanding: { ...shot.landing },
+    likelyLie: { ...likelyLie },
+    likelyDistance: shot.distance,
+    likelyCurve: shot.curve,
+    inBoundsLikely: inBounds,
+    reliefLikely: !inBounds,
+    startLieQuality: lieQuality,
+    likelyLieQuality: inBounds ? getLieQuality(likelyLie, hole) : "relief",
+    requestedPower: shot.requestedPower,
+    effectivePower: shot.effectivePower,
+    maxPower: lie.maxPower,
+    controlledPower: lie.controlledPower,
+    routeWind: shot.routeWind,
+    routeWindZones: shot.routeWindZones,
+    landingZone: {
+      center: { ...shot.landing },
+      radiusX: Math.max(12, lateralRadius),
+      radiusY: Math.max(10, forwardRadius),
+      rotationDegrees: input.aimDegrees,
+    },
+    pathReveal: clamp(0.86 - radius / 180, 0.48, 0.78),
+    confidence: radius < 44 ? "high" : radius < 74 ? "medium" : "low",
+    risk: !inBounds
+      ? "ob-risk"
+      : basketDistance <= hole.tapInRange
+        ? "tap-in"
+        : basketDistance <= hole.puttingRange
+          ? "putt"
+          : "safe",
   };
 }
 
@@ -67,11 +136,12 @@ export function applyShotResult(state: HoleState, hole: HoleConfig, result: Shot
     return state;
   }
 
-  const landing = result.reliefApplied ? hole.reliefPoint : result.landing;
+  const landing = result.landing;
   const throwHoledOut = !result.reliefApplied && distanceBetween(landing, hole.basket) <= BASKET_CATCH_RADIUS;
 
   return {
     lie: throwHoledOut ? { ...hole.basket } : { ...landing },
+    lieQuality: throwHoledOut ? "fairway" : result.lieQuality,
     strokes: state.strokes + 1 + result.penaltyStroke,
     complete: throwHoledOut,
     penaltyStrokes: state.penaltyStrokes + result.penaltyStroke,
@@ -85,6 +155,7 @@ export function applyTapIn(state: HoleState, hole: HoleConfig): HoleState {
 
   return {
     lie: { ...hole.basket },
+    lieQuality: "fairway",
     strokes: state.strokes + 1,
     complete: true,
     penaltyStrokes: state.penaltyStrokes,
@@ -112,8 +183,197 @@ export function isPointInBounds(point: Vector2, hole: HoleConfig): boolean {
   );
 }
 
+export function getStateLieQuality(state: HoleState, hole: HoleConfig): LieQuality {
+  return state.lieQuality ?? getLieQuality(state.lie, hole);
+}
+
+export function getLieQuality(lie: Vector2, hole: HoleConfig): LieQuality {
+  if (!isPointInBounds(lie, hole)) {
+    return "relief";
+  }
+
+  const left = hole.bounds.x;
+  const right = hole.bounds.x + hole.bounds.width;
+  const centerX = hole.bounds.x + hole.bounds.width / 2;
+  const fairwayHalfWidth = hole.bounds.width * 0.28;
+  const edgeBuffer = hole.bounds.width * 0.16;
+
+  if (
+    isInZone(lie, centerX - 104, hole.bounds.y + 172, 72, 82) ||
+    isInZone(lie, centerX + 88, hole.bounds.y + 282, 88, 96) ||
+    isInZone(lie, centerX - 118, hole.bounds.y + 350, 72, 96)
+  ) {
+    return "scramble";
+  }
+
+  if (Math.abs(lie.x - centerX) <= fairwayHalfWidth && lie.x > left + edgeBuffer && lie.x < right - edgeBuffer) {
+    return "fairway";
+  }
+
+  return "rough";
+}
+
 export function distanceBetween(a: Vector2, b: Vector2): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function resolveShotPhysics(
+  state: HoleState,
+  character: Character,
+  hole: HoleConfig,
+  wind: Wind,
+  input: ShotInput,
+) {
+  const start = { ...state.lie };
+  const disc = getDiscById(input.disc);
+  const startLieQuality = getStateLieQuality(state, hole);
+  const lie = lieModifiers(startLieQuality);
+  const requestedPower = clamp(input.power, 0, 1);
+  const effectivePower = Math.min(requestedPower, lie.maxPower);
+  const aim = unitFromDegrees(input.aimDegrees);
+  const right = { x: -aim.y, y: aim.x };
+  const baseDistance =
+    disc.distance * (0.35 + effectivePower * 0.75) * lie.powerMultiplier * statMultiplier(character.stats.power, 0.08);
+  const routeWind = calculateRouteWind(start, aim, baseDistance, hole, wind);
+  const windVector = unitFromDegrees(routeWind.directionDegrees);
+  const windStrength = Math.max(0, routeWind.strength);
+  const tailWind = dot(windVector, aim) * windStrength;
+  const crossWind = dot(windVector, right) * windStrength;
+  const windHandling = (character.stats.windRead + disc.windResistance) / 10;
+  const control = (character.stats.accuracy + disc.control) / 10;
+  const distance =
+    disc.distance *
+    (0.35 + effectivePower * 0.75) *
+    lie.powerMultiplier *
+    statMultiplier(character.stats.power, 0.08) *
+    (1 + tailWind * 0.035 * (1 - windHandling * 0.55));
+  const curve =
+    releaseCurve(input.releaseAngle, character.stats.spin, disc) +
+    crossWind * 9 * (1 - windHandling * 0.55) * lie.controlPenalty +
+    (1 - control) * releaseBias(input.releaseAngle) * 5;
+  const landing = {
+    x: start.x + aim.x * distance + right.x * curve,
+    y: start.y + aim.y * distance + right.y * curve,
+  };
+
+  return {
+    start,
+    landing,
+    distance,
+    curve,
+    startLieQuality,
+    requestedPower,
+    effectivePower,
+    routeWind,
+    routeWindZones: sampleRouteWindZones(start, aim, baseDistance, hole),
+  };
+}
+
+export function calculateRouteWind(start: Vector2, aim: Vector2, distance: number, hole: HoleConfig, globalWind: Wind): Wind {
+  const vectors = [windToVector(globalWind)];
+  const zones = sampleRouteWindZones(start, aim, distance, hole);
+
+  for (const zone of hole.windZones ?? []) {
+    if (zones.includes(zone.id)) {
+      const weight = 0.72;
+      const vector = windToVector(zone);
+      vectors.push({ x: vector.x * weight, y: vector.y * weight });
+    }
+  }
+
+  const combined = vectors.reduce(
+    (total, vector) => ({
+      x: total.x + vector.x,
+      y: total.y + vector.y,
+    }),
+    { x: 0, y: 0 },
+  );
+
+  return vectorToWind(combined);
+}
+
+export function sampleRouteWindZones(start: Vector2, aim: Vector2, distance: number, hole: HoleConfig): string[] {
+  const hits = new Set<string>();
+
+  for (let index = 1; index <= 8; index += 1) {
+    const progress = index / 8;
+    const point = {
+      x: start.x + aim.x * distance * progress,
+      y: start.y + aim.y * distance * progress,
+    };
+
+    for (const zone of hole.windZones ?? []) {
+      if (isInZone(point, zone.rect.x, zone.rect.y, zone.rect.width, zone.rect.height)) {
+        hits.add(zone.id);
+      }
+    }
+  }
+
+  return [...hits];
+}
+
+function resolveReliefLie(landing: Vector2, hole: HoleConfig): Vector2 {
+  if (distanceBetween(hole.reliefPoint, hole.basket) <= hole.tapInRange) {
+    return { ...hole.reliefPoint };
+  }
+
+  return calculateReliefLie(landing, hole);
+}
+
+function calculateReliefLie(landing: Vector2, hole: HoleConfig): Vector2 {
+  const minX = hole.bounds.x + RELIEF_MARGIN;
+  const maxX = hole.bounds.x + hole.bounds.width - RELIEF_MARGIN;
+  const minY = hole.bounds.y + RELIEF_MARGIN;
+  const maxY = hole.bounds.y + hole.bounds.height - RELIEF_MARGIN;
+
+  return {
+    x: clamp(landing.x, minX, maxX),
+    y: clamp(landing.y, minY, maxY),
+  };
+}
+
+function lieModifiers(lieQuality: LieQuality) {
+  if (lieQuality === "relief") {
+    return {
+      maxPower: 0.76,
+      controlledPower: 0.5,
+      powerMultiplier: 0.9,
+      controlPenalty: 1.22,
+      forecastMultiplier: 1.45,
+    };
+  }
+
+  if (lieQuality === "scramble") {
+    return {
+      maxPower: 0.68,
+      controlledPower: 0.42,
+      powerMultiplier: 0.82,
+      controlPenalty: 1.3,
+      forecastMultiplier: 1.65,
+    };
+  }
+
+  if (lieQuality === "rough") {
+    return {
+      maxPower: 0.86,
+      controlledPower: 0.58,
+      powerMultiplier: 0.92,
+      controlPenalty: 1.16,
+      forecastMultiplier: 1.32,
+    };
+  }
+
+  return {
+    maxPower: 1,
+    controlledPower: 0.78,
+    powerMultiplier: 1,
+    controlPenalty: 1,
+    forecastMultiplier: 1,
+  };
+}
+
+function isInZone(point: Vector2, x: number, y: number, width: number, height: number): boolean {
+  return point.x >= x && point.x <= x + width && point.y >= y && point.y <= y + height;
 }
 
 function releaseCurve(releaseAngle: ShotInput["releaseAngle"], spin: number, disc: Disc): number {
@@ -140,6 +400,29 @@ function unitFromDegrees(degrees: number): Vector2 {
   return {
     x: Math.cos(radians),
     y: Math.sin(radians),
+  };
+}
+
+function windToVector(wind: Wind): Vector2 {
+  const unit = unitFromDegrees(wind.directionDegrees);
+  const strength = Math.max(0, wind.strength);
+
+  return {
+    x: unit.x * strength,
+    y: unit.y * strength,
+  };
+}
+
+function vectorToWind(vector: Vector2): Wind {
+  const strength = Math.hypot(vector.x, vector.y);
+
+  if (strength <= 0.001) {
+    return { directionDegrees: 0, strength: 0 };
+  }
+
+  return {
+    directionDegrees: (Math.atan2(vector.y, vector.x) * 180) / Math.PI,
+    strength,
   };
 }
 

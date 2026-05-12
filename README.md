@@ -18,6 +18,7 @@ The visual style should use polished pixel art that pays homage to classic 16-bi
 - [Mobile-First Design](docs/mobile-first-design.md)
 - [Implementation Plan](docs/implementation-plan.md)
 - [Prototype Implementation Brief](docs/prototype-implementation-brief.md)
+- [Product Backlog](docs/product-backlog.md)
 - [Open Questions](docs/open-questions.md)
 
 ## Initial Prototype Goal

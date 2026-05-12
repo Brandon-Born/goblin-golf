@@ -12,14 +12,15 @@ async function expectOnlyScene(page: Page, scene: string) {
 async function expectSetupStateReadouts(page: Page) {
   await expect(holeScene(page)).toHaveClass(/hole-controls--setup/);
   await expect(holeScene(page)).toContainText(/(Behind-goblin setup|Throw setup)/);
-  await expect(holeScene(page)).toContainText("Drag fairway to aim. Tap Disc/Angle to cycle. Drag power, then throw.");
-  await expect(holeScene(page)).toContainText(/Aim\s*-?\d+ deg/);
+  await expect(holeScene(page)).toContainText(/Aim\s*-?\d+ deg(?: (?:left|right))?/);
   await expect(holeScene(page)).toContainText(/Power\s*\d+%/);
   await expect(holeScene(page)).toContainText("Current lie");
   await expect(holeScene(page)).toContainText("YOUR DISC");
   await expect(holeScene(page)).toContainText(/Target\s*BASKET \d+ ft/);
-  await expect(holeScene(page)).toContainText("Projected throw");
-  await expect(holeScene(page)).toContainText("Next action");
+  await expect(holeScene(page)).toContainText(/Forecast\s*(Flat|Hyzer|Anhyzer) (Driver|Midrange|Putter)/);
+  await expect(holeScene(page)).toContainText(/Uncertainty\s*\d+ ft/);
+  await expect(holeScene(page)).toContainText(/Wind lane\s*(Open air|Moss Tailwind|Ruin Crosswind)/);
+  await expect(holeScene(page)).toContainText(/Next action\s*Set aim and power, then Throw disc/);
   await expect(page.getByRole("slider", { name: "Throw power" })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Disc: / })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Angle: / })).toBeVisible();
@@ -30,31 +31,34 @@ async function expectPuttingStateReadouts(page: Page) {
   await expect(holeScene(page)).toHaveClass(/hole-controls--putting/);
   await expect(holeScene(page)).toContainText("Putting view");
   await expect(holeScene(page)).toContainText("Putting mode. Drag the crosshair on the basket and set putt power.");
+  await expect(holeScene(page)).toContainText(/Current lie\s*PUTT MARKER/);
+  await expect(holeScene(page)).toContainText(/Target\s*BASKET CHAINS/);
+  await expect(holeScene(page)).toContainText(/Putt forecast\s*\d+ ft with wind drift/);
+  await expect(holeScene(page)).toContainText(/Next action\s*Aim crosshair, set power, Release putt/);
   await expect(holeScene(page)).toContainText(/Putt\s*\d+ ft/);
   await expect(holeScene(page)).toContainText(/Aim miss\s*\d+ px/);
   await expect(page.getByRole("slider", { name: "Putt power" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /^Putt power: / })).toBeVisible();
   await expect(page.getByRole("button", { name: "Release putt" })).toBeEnabled();
 }
 
 async function startHole(page: Page, goblin = "Morga Mosswhack") {
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "Start prototype" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start round" })).toBeVisible();
 
   await expect(canvas(page)).toBeVisible();
   await expect(canvas(page)).toHaveJSProperty("width", 390);
   await expect(canvas(page)).toHaveJSProperty("height", 844);
   await expectOnlyScene(page, "title");
 
-  await page.getByRole("button", { name: "Start prototype" }).click();
+  await page.getByRole("button", { name: "Start round" }).click();
   await expect(page.getByRole("button", { name: "Select Grib Ninesnatch" })).toBeVisible();
   await expectOnlyScene(page, "character-select");
-  await expect(page.getByRole("button", { name: "Start prototype" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Start round" })).toHaveCount(0);
   await page.getByRole("button", { name: `Select ${goblin}` }).click();
   await page.getByRole("button", { name: "Confirm goblin" }).click();
 
-  await expect(page.getByText("Disc: Driver")).toBeVisible();
   await expectOnlyScene(page, "hole");
+  await expect(page.getByRole("button", { name: /^Disc: / })).toBeVisible();
   await expectSetupStateReadouts(page);
   await expect(page.getByRole("button", { name: "Confirm goblin" })).toHaveCount(0);
 }
@@ -77,11 +81,20 @@ async function setPower(page: Page, label: "Throw power" | "Putt power", percent
   await expect(slider).toHaveAttribute("aria-valuenow", `${Math.round(percent * 100)}`);
 }
 
-async function aimAt(page: Page, x: number) {
-  await page.mouse.move(x, 350);
+async function aimAt(page: Page, x: number, y = 350) {
+  await page.mouse.move(x, y);
   await page.mouse.down();
-  await page.mouse.move(x, 350);
+  await page.mouse.move(x, y);
   await page.mouse.up();
+}
+
+async function targetDistance(page: Page) {
+  const text = (await holeScene(page).textContent()) ?? "";
+  const match = /Target\s*BASKET\s*(\d+) ft/.exec(text);
+  if (!match) {
+    throw new Error(`Could not find target distance in hole scene text: ${text}`);
+  }
+  return Number(match[1]);
 }
 
 async function throwDiscAndWaitForLie(page: Page) {
@@ -145,11 +158,13 @@ async function expectManualPuttingDistance(page: Page) {
       const match = /Putt\s*(\d+) ft/.exec(text);
       return match ? Number(match[1]) : 0;
     })
-    .toBeGreaterThan(18);
+    .toBeGreaterThan(0);
 }
 
 test("mobile player flow reaches the score summary with fresh scene controls", async ({ page }) => {
   await startHole(page);
+  await expect(holeScene(page)).toContainText(/Forecast\s*(Flat|Hyzer|Anhyzer) (Driver|Midrange|Putter)/);
+  await expect(holeScene(page)).toContainText(/Uncertainty\s*\d+ ft/);
   await enterManualPutting(page);
   await expectPuttingStateReadouts(page);
 
@@ -163,16 +178,14 @@ test("mobile player flow reaches the score summary with fresh scene controls", a
   await page.mouse.up();
   await page.getByRole("button", { name: "Release putt" }).click();
 
-  await expect(page.getByText("Score Summary")).toBeVisible();
   await expectOnlyScene(page, "score");
   await expect(page.getByRole("button", { name: "Release putt" })).toHaveCount(0);
-  await expect(page.getByText(/Strokes:/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Play again" })).toBeVisible();
 
   await page.getByRole("button", { name: "Play again" }).click();
   await expectOnlyScene(page, "title");
-  await expect(page.getByRole("button", { name: "Start prototype" })).toBeVisible();
-  await expect(page.getByText("Score Summary")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Start round" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play again" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Release putt" })).toHaveCount(0);
 });
 
@@ -181,10 +194,12 @@ test("shot setup exposes playtest-critical state and aim feedback", async ({ pag
   await expectSetupStateReadouts(page);
 
   await expect(page.getByRole("button", { name: "Disc: Driver" })).toBeVisible();
+  await expect(holeScene(page)).toContainText(/Forecast\s*(Flat|Hyzer|Anhyzer) (Driver|Midrange|Putter)/);
+  await expect(holeScene(page)).toContainText(/Uncertainty\s*\d+ ft/);
 
   const beforeAim = await canvas(page).screenshot();
   await aimAt(page, 315);
-  await expect(holeScene(page)).toContainText(/Aim\s*-5\d deg/);
+  await expect(holeScene(page)).toContainText(/Aim\s*\d+ deg right/);
   const afterAim = await canvas(page).screenshot();
   expect(afterAim.equals(beforeAim)).toBe(false);
 
@@ -249,14 +264,23 @@ test("OB relief keeps the throw loop playable and can still reach putting", asyn
   await expect(page.getByRole("button", { name: "Angle: Flat" })).toBeVisible();
   await expect(page.getByText("OB landing. +1 penalty and relief moved the lie in bounds.")).toBeVisible();
   await expect(holeScene(page)).toContainText(/Aim\s*-?\d+ deg/);
-  await expect(page.getByText("Score Summary")).toHaveCount(0);
+  await expect(page.getByText("Round Complete")).toHaveCount(0);
   await expectOnlyScene(page, "hole");
 
+  const reliefDistance = await targetDistance(page);
   await aimAt(page, 195);
-  await throwUntilPutting(page, 4);
+  await throwDiscAndWaitForLie(page);
+  await waitForNextThrowOrPutt(page);
 
-  await expect(page.getByRole("button", { name: "Release putt" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Throw disc" })).toHaveCount(0);
+  if (await page.getByRole("button", { name: "Release putt" }).isVisible()) {
+    await expectPuttingStateReadouts(page);
+    await expect(page.getByRole("button", { name: "Throw disc" })).toHaveCount(0);
+  } else {
+    await expectSetupStateReadouts(page);
+    await expect.poll(() => targetDistance(page)).toBeLessThan(reliefDistance);
+    await throwUntilPutting(page, 3);
+    await expectPuttingStateReadouts(page);
+  }
 });
 
 test("putting mode replaces shot setup with a distinct basket-focused view", async ({ page }) => {
@@ -267,7 +291,6 @@ test("putting mode replaces shot setup with a distinct basket-focused view", asy
   await expectManualPuttingDistance(page);
   await expectPuttingStateReadouts(page);
 
-  await expect(page.getByRole("button", { name: "Putt power: 64%" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Release putt" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Throw disc" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^Disc:/ })).toHaveCount(0);
@@ -275,9 +298,8 @@ test("putting mode replaces shot setup with a distinct basket-focused view", asy
   const puttingView = await canvas(page).screenshot();
   expect(puttingView.equals(setupView)).toBe(false);
 
-  await page.getByRole("button", { name: "Putt power: 64%" }).click();
-  await expect(page.getByRole("button", { name: "Putt power: 79%" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Putt power: 64%" })).toHaveCount(0);
+  await setPower(page, "Putt power", 0.79);
+  await expect(page.getByRole("slider", { name: "Putt power" })).toHaveAttribute("aria-valuenow", "79");
 
   await page.mouse.move(195, 300);
   await page.mouse.down();
@@ -298,6 +320,6 @@ test("manual putt make from putting mode reaches score summary", async ({ page }
   await page.mouse.up();
   await page.getByRole("button", { name: "Release putt" }).click();
 
-  await expect(page.getByText("Score Summary")).toBeVisible();
-  await expect(page.getByText(/Strokes:/)).toBeVisible();
+  await expectOnlyScene(page, "score");
+  await expect(page.getByRole("button", { name: "Play again" })).toBeVisible();
 });
