@@ -35,7 +35,8 @@ export class HoleScene extends Phaser.Scene {
   private crosshair?: Phaser.GameObjects.Arc;
   private crosshairLines: Phaser.GameObjects.Line[] = [];
   private puttGuide?: Phaser.GameObjects.Graphics;
-  private status = "Drag fairway to aim. Tap Disc/Angle to cycle. Drag power, then throw.";
+  private readonly defaultStatus = "Drag fairway to aim. Tap Disc/Angle to cycle. Drag power, then throw.";
+  private status = this.defaultStatus;
   private lastResult?: ShotResult;
   private controlsLocked = false;
   private queuedThrowClicks = 0;
@@ -103,16 +104,6 @@ export class HoleScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(7);
-    this.add
-      .text(195, 594, "Drag fairway to aim. Set power, then Throw disc.", {
-        color: "#cfe4a4",
-        fontFamily: "Trebuchet MS",
-        fontSize: "13px",
-        align: "center",
-        wordWrap: { width: 316 },
-      })
-      .setOrigin(0.5);
-
     this.lieMarker = this.add.circle(lie.x, lie.y, 13, 0xe2d36c, 0.22).setStrokeStyle(4, 0xf6f0d2).setDepth(6);
     this.aimLine = undefined;
     this.aimPath = this.add.graphics().setDepth(4);
@@ -324,7 +315,9 @@ export class HoleScene extends Phaser.Scene {
   }
 
   private renderSetupControls() {
-    this.addStatusPanel("Throw setup", this.status);
+    if (this.status !== this.defaultStatus) {
+      this.addStatusPanel("Shot result", this.status);
+    }
     const forecast = gameSession.forecastThrow(this.currentShotInput());
     this.addScreenStatePanel([
       ["Lie", this.currentLieQualityLabel()],
@@ -782,11 +775,15 @@ export class HoleScene extends Phaser.Scene {
     this.aimLine?.setTo(start.x, start.y, fadeEnd.x, fadeEnd.y);
     this.aimArrow?.setVisible(false);
     this.aimTarget?.setVisible(false);
-    this.aimLabel?.setPosition(
-      Phaser.Math.Clamp(labelPoint.x + 48, 86, 282),
-      Phaser.Math.Clamp(labelPoint.y, 200, 488),
-    );
-    this.aimLabel?.setText(this.previewLandingLabel(forecast));
+    this.aimLabel?.setVisible(!forecast.reliefLikely);
+    if (!forecast.reliefLikely) {
+      const labelOffsetX = this.aimOffsetDegrees >= 0 ? 48 : -48;
+      this.aimLabel?.setPosition(
+        Phaser.Math.Clamp(labelPoint.x + labelOffsetX, 86, 282),
+        Phaser.Math.Clamp(labelPoint.y, 200, 488),
+      );
+      this.aimLabel?.setText(this.previewLandingLabel(forecast));
+    }
   }
 
   private updateLieMarker() {
@@ -1050,7 +1047,7 @@ export class HoleScene extends Phaser.Scene {
 
     if (distance > 470) {
       this.disc = "driver";
-      this.power = 0.9;
+      this.power = 0.78; // at 0.78 effectivePower equals controlledPower, keeping risk "Low - open lane"
       this.aimOffsetDegrees = 6; // steer toward fairway center; tee and basket share x=120, center is at x=180
       return;
     }
@@ -1094,11 +1091,8 @@ export class HoleScene extends Phaser.Scene {
 
   private formatAimOffset() {
     const rounded = Math.round(this.aimOffsetDegrees);
-    if (rounded === 0) {
-      return "0 deg";
-    }
-
-    return `${Math.abs(rounded)} deg ${rounded > 0 ? "right" : "left"}`;
+    if (rounded === 0) return "0°";
+    return `${Math.abs(rounded)}° ${rounded > 0 ? "R" : "L"}`;
   }
 
   private previewLandingLabel(forecast: ShotForecast) {

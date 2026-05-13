@@ -21,7 +21,7 @@ The current prototype can complete the main flow:
 
 ### Aim Readout Truncates With Ellipsis
 
-Status: Open
+Status: Resolved
 
 The Aim readout in the shot setup split-card is cut off with an ellipsis (e.g. `6 deg r…` instead of `6 deg right`). The `.readout-value` element has `text-overflow: ellipsis; white-space: nowrap` and the split-card does not give the cell enough width to show directional text.
 
@@ -41,7 +41,7 @@ Suggested next step:
 
 ### Mobile Shot HUD Obstructs The Playfield
 
-Status: Open (partially mitigated)
+Status: Resolved
 
 The shot setup HUD covers the lower half of the canvas. The screen-state panel was reduced from 8 rows to 4 rows, but the combined overlay (status panel + 4-cell grid + readout card + power pad + button row) still starts around y=555 on a 844px viewport. The tee/current lie marker and the MOSS TAILWIND wind-zone label are hidden behind or very close to the overlay top edge.
 
@@ -62,7 +62,7 @@ Suggested next step:
 
 ### Forecast Label Overlaps Course Elements When Aiming Left
 
-Status: Open (partially mitigated)
+Status: Resolved
 
 Canvas forecast labels were shortened to chips and position clamping was tightened, but when the player drags aim hard left into OB territory, the clamped `THROW FORECAST / OB risk` label jumps to a fixed screen position that overlaps the RUINS hazard label or the wind-zone arrow.
 
@@ -83,7 +83,7 @@ Suggested next step:
 
 ### Default First Shot Still Not On A Safe Line
 
-Status: Open (partially mitigated)
+Status: Resolved
 
 The initial aim offset was moved 6° right to avoid the scramble zone. The risk now reads `Medium - shape touch` instead of `High - blocked stance`, which is an improvement, but the default still does not land the player on a clearly safe, readable line. A new player sees a medium-risk forecast on their very first throw.
 
