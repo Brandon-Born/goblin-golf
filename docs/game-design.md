@@ -24,6 +24,14 @@ Each goblin should feel meaningfully different through stats, animation, voice/t
 
 The proof of concept should support a complete hole in a few minutes. Later versions can expand to full courses, tournaments, unlocks, and challenge modes.
 
+### Rewarding Course Reading
+
+Fantasy courses should function as spatial puzzles with multiple valid lines. Every hole should have at least one obvious safe route, one high-risk shortcut, and at least one fantasy modifier — a magical vortex, gravity well, or enchanted terrain — that rewards players who read it correctly.
+
+The design goal is the same as a well-placed sand trap or water hazard in traditional golf: the safe line avoids the hazard; the expert line uses it. Players who understand a modifier can pick a line that beginners skip and feel clever for doing so. Fantasy physics modifiers are not just decoration — they are puzzle elements that make routes interesting.
+
+Crucially, fantasy modifiers should extend familiar disc golf concepts rather than invent new hidden rules. A swirling vortex behaves like an unusual rotational wind lane. A gravity well behaves like a pull-slope that also carries a slingshot bonus for the right line. Players who already understand wind and disc flight should be able to read and use these modifiers with some experimentation, not a tutorial.
+
 ## Target Tone
 
 The tone is light, colorful, and competitive without becoming mean-spirited. Goblins can be goofy, boastful, scrappy, and overconfident.

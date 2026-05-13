@@ -480,6 +480,39 @@ These are not all defects. They are known follow-up tasks from documentation, pl
 - Add more course props only after hazard readability is solved.
 - Add a meaningful visual to the title screen upper zone (goblin trio, landscape, or tighter layout).
 
+### Fantasy Physics Modifiers
+
+These are future course features, not current-hole defects. They should be designed before the second hole is laid out.
+
+#### Hex Spiral (Swirling Vortex)
+
+A pool of spiraling magical energy. Discs flying through it are pulled into a rotational curve whose strength depends on entry depth.
+
+- **Outer ring:** gentle curve. Usable to bend a shot around an obstacle or redirect a fade.
+- **Center:** sharp spiral resulting in a scramble lie.
+- **Skilled use:** entering the outer ring at a calculated angle redirects the disc along a curve that wraps around a ruin block or cliff face to reach an otherwise-blocked basket.
+
+Implementation questions:
+- Sample the vortex spiral force at each route step, or resolve as a single force at midpoint?
+- Should the outer ring show a visible arc preview in the forecast?
+- How does the Runic Maw interact with an active vortex if both are on the same route?
+
+#### Runic Maw (Gravity Well)
+
+A point of concentrated magical gravity that pulls nearby discs toward its center during flight.
+
+- **Outer influence zone:** gentle pull toward the Maw. Usable as a carry bonus if positioned favorably.
+- **Transition zone:** significant pull that bends the arc. Threading this zone at the right angle and disc speed produces a slingshot — the disc exits faster than it entered.
+- **Pit center:** disc pulled in fully; treat as OB with a penalty stroke.
+
+Slingshot line is the high-risk, high-reward route: a fast driver resists the Maw center but captures less boost; a slower midrange is pulled harder and needs a more precise entry angle.
+
+Implementation questions:
+- Slingshot bonus: distance multiplier, or extra carry appended to the landing calculation?
+- Disc speed proxy: use `effectivePower * disc.distance`, or introduce an explicit speed stat?
+- Does the Wind Read stat and/or the on-screen forecast reveal the pull radius clearly enough to teach the mechanic without a tutorial?
+- Should pit-center landings place the lie inside the Maw (unusual scramble) or at a configured relief point outside?
+
 ### Technical And Tooling
 
 - Review `package-lock.json` before committing to remove accidental environment-only churn if needed.

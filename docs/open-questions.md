@@ -48,6 +48,17 @@ These notes track which early design questions have been resolved for the first 
 - Recommended: prioritize a small but scalable game architecture, especially scene flow, shot state, and tuning data.
 - Decided: build an implementation brief first, then scaffold later.
 
+## Fantasy Physics Modifiers
+
+These questions apply to the Hex Spiral and Runic Maw mechanics planned for future holes. See `docs/core-mechanics.md` for the full design intent.
+
+- **Slingshot carry bonus:** Should the Runic Maw slingshot be modeled as a distance multiplier on the existing shot calculation, or as a second carry segment appended after the transition zone? A multiplier is simpler but may feel discontinuous at the visible landing point.
+- **Disc speed proxy:** The slingshot mechanic requires comparing disc speed against the Maw's pull. Should this use `effectivePower * disc.distance` as a speed proxy, or should discs get an explicit speed stat? An explicit stat has more design surface; a proxy avoids a new stat screen element.
+- **Forecast reveal for gravity well pull radius:** Should the forecast show the pull radius as a circle overlay on the course (always visible) or only when the player's shot route crosses the influence zone? Always visible is more learnable; route-gated reveal rewards Wind Read stat investment.
+- **Hex Spiral route sampling:** The current wind zone system samples 8 points along the route. A vortex whose effect varies by distance from center may need more samples or a different influence model. Decide before implementing.
+- **Rule interaction at overlap:** If a route passes through both a Hex Spiral outer ring and a Runic Maw transition zone on the same shot, how are the forces composed? Additive vectors, dominant-force-wins, or sequential?
+- **OB vs. scramble for pit center lies:** Should a Runic Maw pit-center landing apply a penalty stroke + relief point (same as OB), or a scramble lie inside the pit with no penalty stroke but heavy control penalty? The OB mapping is simpler and maps cleanly to existing rules; the scramble-in-pit creates a more interesting recovery shot.
+
 ## Mobile Format
 
 - Decided: design for mobile web first.

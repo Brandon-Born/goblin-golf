@@ -73,6 +73,47 @@ Release angle should be selectable with a simple mobile control, such as a three
 
 Accuracy should come from deliberate aim, character stats, disc control, wind, and lie context. The first prototype should not use timing-based release accuracy. Misses can still shift direction, reduce distance, or add wobble, but those results should come from understandable shot choices and stat modifiers.
 
+### Fantasy Physics Modifiers
+
+Beyond standard wind zones, fantasy courses can include magical environmental forces that actively shape disc flight. These are not decorative — they are puzzle elements that reward players who read them correctly.
+
+The design goal is the same as a well-placed sand trap or water hazard in traditional golf: the safe line avoids the hazard; the expert line uses it. Players who understand a modifier can pick a line that beginners skip, and feel clever for doing so.
+
+#### Hex Spiral (Swirling Vortex)
+
+A pool of spiraling magical energy. Any disc flying through it is pulled into a rotational curve whose strength depends on how deeply the disc enters.
+
+- **Outer ring:** gentle curve. Usable to bend a shot around an obstacle or redirect a fade.
+- **Center:** sharp spiral. Throws the disc unpredictably off target and leaves a scramble lie.
+- **Skilled use:** entering the outer ring at a calculated angle redirects the disc along a curve that no normal hyzer or anhyzer could achieve — typically wrapping around a ruin block or cliff face to reach a basket that is otherwise blocked.
+
+On course, the Hex Spiral is a shortcut gate. The standard route goes around it. The risk route threads through it and arrives at the basket from a direction that cuts strokes off the hole.
+
+#### Runic Maw (Gravity Well)
+
+A point of concentrated magical gravity that pulls nearby discs toward its center during flight. Unlike crosswind, which pushes perpendicular to flight, the Maw pulls toward a fixed point regardless of flight direction.
+
+- **Distant pass (outer influence zone):** a gentle curve toward the Maw. Often negligible, but can be used deliberately to add carry toward the basket if the Maw is positioned favorably.
+- **Close pass (transition zone):** significant pull that bends the flight arc. Players who read the pull radius can use this to arc a shot that would otherwise fly straight past the basket.
+- **Slingshot line (threading the transition zone):** flying through the transition zone at the right entry angle and disc speed converts the Maw's pull into forward momentum. The disc exits faster than it entered and carries further than its normal disc distance would allow. This is the high-risk, high-reward route.
+- **Center (pit zone):** the disc is pulled in fully. Treat as OB or a scramble lie inside the Maw with a penalty stroke.
+
+The Runic Maw introduces a new strategic variable: disc speed. A fast driver resists the Maw's center but captures less slingshot boost. A slower midrange is pulled harder and requires a more precise entry angle to thread the transition zone cleanly. Goblin wind-read stat should influence how well the player's forecast shows the pull radius.
+
+#### Rule Mapping
+
+Fantasy modifiers should extend existing disc golf concepts rather than invent new ones.
+
+| Modifier | Rule analog |
+| --- | --- |
+| Hex Spiral outer ring | Unusual wind lane with rotational character |
+| Hex Spiral center | Scramble lie in a hazard zone |
+| Runic Maw outer influence | Favorable tailwind or course slope |
+| Runic Maw slingshot | Power bonus from a difficult line |
+| Runic Maw pit center | OB or scramble lie with penalty stroke |
+
+This keeps fantasy physics legible to disc golf players without creating hidden rule exceptions.
+
 ## Putting Mini Game
 
 Putting should feel separate from driving. It should be shorter, more focused, and basket-centric.
