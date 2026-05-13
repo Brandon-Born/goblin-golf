@@ -5,3 +5,5 @@ playwright-report/
 coverage/
 debug.log
 *.log
+.claude/
+!.claude/settings.json
