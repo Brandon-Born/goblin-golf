@@ -19,70 +19,169 @@ The current prototype can complete the main flow:
 
 ## P1 - Major Usability Issues
 
+### Aim Readout Truncates With Ellipsis
+
+Status: Open
+
+The Aim readout in the shot setup split-card is cut off with an ellipsis (e.g. `6 deg r…` instead of `6 deg right`). The `.readout-value` element has `text-overflow: ellipsis; white-space: nowrap` and the split-card does not give the cell enough width to show directional text.
+
+Evidence:
+
+- `06-shot-setup.png`, `07-aim-left.png`, `08-aim-right.png` (agent visual audit, 2026-05-13)
+
+Impact:
+
+- Players cannot read their full aim offset during the most critical decision moment.
+- The truncation makes the HUD look broken.
+
+Suggested next step:
+
+- Allow the aim value to wrap to two lines (`white-space: normal`) or abbreviate: `6° R` / `24° L`.
+- Alternatively widen the split-card aim cell and shrink the power cell.
+
 ### Mobile Shot HUD Obstructs The Playfield
 
-Status: Open
+Status: Open (partially mitigated)
 
-On mobile, the shot setup HUD covers too much of the lower playfield. It overlaps the tee/current lie area and can hide wind-zone labels. This is now a major issue because the game asks players to read route, lie, wind lane, forecast, and landing zone before throwing.
-
-Evidence:
-
-- `test-results/visual-audit/03-shot-setup.png`
-- `test-results/visual-audit/04-hyzer-flight-path.png`
-
-Impact:
-
-- Players cannot fully inspect the intended route.
-- Wind lanes and lie labels are harder to connect to the course.
-- The first throw feels more UI-heavy than game-like on phones.
-
-Suggested next step:
-
-- Collapse secondary readouts behind a compact drawer or move dense forecast data into a smaller bottom sheet.
-- Keep only aim, power, disc, angle, throw, and one concise forecast chip visible during normal aiming.
-
-### Forecast And Course Labels Overflow Or Get Clipped
-
-Status: Open
-
-Some in-canvas labels extend beyond the safe playfield or overlap each other. The clearest case is the post-OB/recovery state where a forecast label runs off the right side of the canvas. Wind-zone labels can also be partially hidden behind other labels or the HUD.
+The shot setup HUD covers the lower half of the canvas. The screen-state panel was reduced from 8 rows to 4 rows, but the combined overlay (status panel + 4-cell grid + readout card + power pad + button row) still starts around y=555 on a 844px viewport. The tee/current lie marker and the MOSS TAILWIND wind-zone label are hidden behind or very close to the overlay top edge.
 
 Evidence:
 
-- `test-results/visual-audit/04-hyzer-flight-path.png`
-
-Impact:
-
-- Forecast information becomes visually noisy.
-- Important labels compete with the basket, lie, OB markers, and hazards.
-- The game looks less polished even when the underlying rules work.
-
-Suggested next step:
-
-- Add label clamping and adaptive placement.
-- Prefer short chips such as `Low confidence`, `OB risk`, and `Crosswind` on canvas, with details in the DOM HUD.
-
-### Default First Shot Reads As High Risk
-
-Status: Open
-
-The first suggested shot for Skrak currently reads `High - blocked stance` with a low-confidence landing zone. It may be mechanically accurate, but it is a strange default for a first-time player because it makes the game look like it is recommending a bad line.
-
-Evidence:
-
+- `06-shot-setup.png`, `10-lie-resolved.png` (agent visual audit, 2026-05-13)
 - `test-results/visual-audit/03-shot-setup.png`
 
 Impact:
 
-- First impression can feel punitive or confusing.
-- Players may not understand whether the forecast is a warning, tutorial, or bug.
+- Players cannot fully inspect the tee lie, wind lane, or lower course area before throwing.
+- Wind lane labels inside the playfield are clipped by the HUD.
 
 Suggested next step:
 
-- Tune initial default aim/disc/power per character to start on a safe fairway route.
-- Use the risky route as an opt-in puzzle, not the default recommendation.
+- Move the overlay anchor point higher or collapse it further so the canvas below y=500 is fully visible.
+- Keep only aim readout, power pad, and throw button in the persistent layer; move status/forecast into a pull-up sheet.
+
+### Forecast Label Overlaps Course Elements When Aiming Left
+
+Status: Open (partially mitigated)
+
+Canvas forecast labels were shortened to chips and position clamping was tightened, but when the player drags aim hard left into OB territory, the clamped `THROW FORECAST / OB risk` label jumps to a fixed screen position that overlaps the RUINS hazard label or the wind-zone arrow.
+
+Evidence:
+
+- `07-aim-left.png` (agent visual audit, 2026-05-13)
+- `test-results/visual-audit/04-hyzer-flight-path.png`
+
+Impact:
+
+- Forecast information and course labels visually compete.
+- OB-risk warning and hazard labels are both important at the same moment.
+
+Suggested next step:
+
+- Offset the forecast label in the opposite direction from the hazard labels (push label right when aiming left and vice versa).
+- Consider hiding the forecast label entirely while aiming into OB and relying on the risk chip in the HUD.
+
+### Default First Shot Still Not On A Safe Line
+
+Status: Open (partially mitigated)
+
+The initial aim offset was moved 6° right to avoid the scramble zone. The risk now reads `Medium - shape touch` instead of `High - blocked stance`, which is an improvement, but the default still does not land the player on a clearly safe, readable line. A new player sees a medium-risk forecast on their very first throw.
+
+Evidence:
+
+- `06-shot-setup.png` (agent visual audit, 2026-05-13)
+- `test-results/visual-audit/03-shot-setup.png`
+
+Impact:
+
+- First impression still feels marginal rather than welcoming.
+- Players may interpret medium risk as a warning rather than a suggestion.
+
+Suggested next step:
+
+- Tune default aim/power to reach a fairway landing with `Low - open lane` risk for all three characters.
+- Consider a character-specific default that matches each goblin's play style (e.g. Morga starts more conservative, Skrak starts more aggressive).
 
 ## P2 - Gameplay And UX Improvements
+
+### Selected Character Badge Reads As Locked Or Premium-Gated
+
+Status: Open
+
+The selected character card displays a gold `LOCKED` badge in its top-right corner. In standard UI convention `LOCKED` signals that content is unavailable or requires a purchase. Here it means the character is the active selection. First-time players will likely interpret this as the character being unavailable to them.
+
+Evidence:
+
+- `03-char1-selected.png`, `04-char2-selected.png`, `05-char3-selected.png` (agent visual audit, 2026-05-13)
+
+Impact:
+
+- Players may skip the highlighted character and try to select a different one.
+- Onboarding confusion on the very first screen after title.
+
+Suggested next step:
+
+- Replace `LOCKED` with `SELECTED`, `CHOSEN`, or a checkmark icon.
+
+### Character Tab Row Is Visually Disconnected From Cards
+
+Status: Open
+
+The three character name tabs (`Grib`, `Morga`, `Skrak`) at the bottom of the character select screen are separated from the character cards above by approximately 150px of empty dark space. There is no visual line, bracket, or connecting element to show which card a tab refers to. A new player tapping `Morga` has no obvious cue showing which card just highlighted.
+
+Evidence:
+
+- `02-character-select.png`, `04-char2-selected.png` (agent visual audit, 2026-05-13)
+
+Impact:
+
+- Character selection feels disconnected rather than direct.
+- Players may not understand that tapping a tab scrolls or selects a card.
+
+Suggested next step:
+
+- Move tabs directly below or alongside their respective cards.
+- Or use a horizontal card carousel that scrolls to the selected character when a tab is tapped.
+
+### Throw Disc Button Remains Active During Flight With No Queue Feedback
+
+Status: Open
+
+After the player taps `Throw disc`, the disc enters the flight animation and the mode switches to `flight`. The overlay shows `Disc in flight / Watch the landing…` but also renders an active `Throw disc` button. Clicking it while flight is resolving queues a second throw. There is no visual indicator that the button is queuing rather than firing immediately, so repeated taps feel unresponsive.
+
+Evidence:
+
+- `09-flight.png` (agent visual audit, 2026-05-13)
+
+Impact:
+
+- Players who tap the button during flight think the game is frozen.
+- Repeat-tapping can queue multiple throws unintentionally.
+
+Suggested next step:
+
+- Disable the `Throw disc` button during flight and replace its label with `Watch the flight…` or hide it entirely.
+- If queuing is a deliberate feature, show a visible queue indicator (e.g. `Next throw queued ✓`).
+
+### Putting Drag Instruction Is Not Prominent Enough
+
+Status: Open
+
+The putting view starts with the crosshair centered on the basket (`Aim miss: 0 px`). The instruction text `Drag crosshair on basket` is rendered at 15px in the canvas at approximately y=512, below the large distance text and above the HUD overlay edge. Many players will not notice it and will simply click `Release putt` without ever adjusting aim.
+
+Evidence:
+
+- `11-putting.png` (agent visual audit, 2026-05-13)
+
+Impact:
+
+- The aim mechanic in putting is invisible to players who skip the instruction.
+- Puts feel random rather than skill-based if the player never drags the crosshair.
+
+Suggested next step:
+
+- Add a brief animated pulse or arrow on the crosshair that plays for 2 seconds when putting mode is entered.
+- Or move the drag instruction into the HUD panel where it competes less with the large distance text.
 
 ### Wind Lanes Need Clearer Player Language
 
@@ -120,7 +219,7 @@ Suggested next step:
 
 Status: Open
 
-Ruins and mushrooms are visually present, and lie quality can become rough/scramble, but the course does not yet make every hazard’s rule impact obvious at a glance.
+Ruins and mushrooms are visually present, and lie quality can become rough/scramble, but the course does not yet make every hazard's rule impact obvious at a glance.
 
 Impact:
 
@@ -149,6 +248,120 @@ Suggested next step:
 - Add lightweight chain/rim/miss visual states.
 
 ## P3 - Polish And Technical Debt
+
+### Score Screen Flavor Label Looks Like A Button
+
+Status: Open
+
+The `Clean finish` result label on the score screen is rendered inside a dark card with a border, making it look like a tappable button. It is static flavor text. Players may tap it expecting to navigate forward, then be confused when nothing happens. The only real action is `Play again` at the bottom.
+
+Evidence:
+
+- `12-after-putt.png` (agent visual audit, 2026-05-13)
+
+Suggested next step:
+
+- Remove the border and button-like styling from flavor text.
+- Use plain centered text with a different color or italic style to distinguish it from interactive elements.
+
+### Flight View Course Props Look Like Rendering Artifacts
+
+Status: Open
+
+Several mushroom and rock props in the flight view appear at y=630–730, below the green fairway rectangle and any labeled area. Against a dark background with no ground context, they read as isolated colored dots rather than course scenery.
+
+Evidence:
+
+- `09-flight.png` (agent visual audit, 2026-05-13)
+
+Suggested next step:
+
+- Extend the ground/rough area to cover all prop positions, or push props inside the fairway boundary.
+- If props intentionally sit outside the fairway (as OB scenery), add a thin ground band to anchor them visually.
+
+### Power Pad Thumb Hit Target Is Too Small
+
+Status: Open
+
+The power-pad track is 32×44px and the thumb marker is only 4px tall (though 46px wide). On a touch device this gives a very small vertical drag target. Additionally the `Drag up for more power` hint text has `display: none` in CSS and never appears.
+
+Evidence:
+
+- `06-shot-setup.png` (agent visual audit, 2026-05-13)
+
+Suggested next step:
+
+- Increase track height to at least 64px.
+- Show the hint text on first visit or while the pad is idle.
+
+### Score Screen Backdrop Props Bleed Behind Card Border
+
+Status: Open
+
+Two decorative disc ellipses used as backdrop decoration are partially visible below the score card border, appearing as colored blobs behind the card's bottom edge. The layering makes the card bottom look unfinished.
+
+Evidence:
+
+- `12-after-putt.png` (agent visual audit, 2026-05-13)
+
+Suggested next step:
+
+- Clip or reposition the disc ellipses so they sit fully behind or fully outside the score card.
+
+### Score Screen Hole Name Has Low Contrast Against Gold Circle
+
+Status: Open
+
+The hole name `Ruincap Run` is drawn inside a gold-filled circle backdrop that sits below the `Round Complete` headline. The text color is low contrast against the gold fill at the scale rendered.
+
+Evidence:
+
+- `12-after-putt.png` (agent visual audit, 2026-05-13)
+
+Suggested next step:
+
+- Use dark ink (`#10150f`) for the hole name text against the gold circle, or move the name outside the circle.
+
+### Title Screen Upper Area Is Visually Sparse
+
+Status: Open
+
+The title screen has a large empty zone above y=300 with only two small decorative circles. The dominant visual element between the `Goblin Golf` title and the basket illustration is a set of dark-green horizontal rectangles that take up significant space but carry no information.
+
+Evidence:
+
+- `01-title.png` (agent visual audit, 2026-05-13)
+
+Suggested next step:
+
+- Add the goblin trio, a course landscape thumbnail, or a short tagline in the upper zone.
+- Or tighten the vertical spacing so title and illustration feel like one composed unit.
+
+### Character Portraits Are Minimal Placeholder Geometry
+
+Status: Open
+
+All three goblin portraits are colored circles with ear triangles, dot eyes, and a mouth bar. No pose, equipment, or expression differentiates them. Stat bars distinguish them numerically but the portraits themselves carry no personality.
+
+Suggested next step:
+
+- Replace with pixel-art portraits that show posture, disc grip, or a character-specific prop.
+- At minimum add a unique silhouette per character so players recognize them at a glance.
+
+### Stat Bars Are Hard To Read At Small Sizes
+
+Status: Open
+
+The stat bars on character cards are 6px tall with 54px total track. Filled vs. empty contrast is low at arm's length on a phone screen, especially for mid-range values (3/5).
+
+Evidence:
+
+- `05-char3-selected.png` (agent visual audit, 2026-05-13)
+
+Suggested next step:
+
+- Increase bar height to at least 10px.
+- Use a higher-contrast fill color (brighter gold or cream against a dark track).
 
 ### Phaser Bundle Size Warning
 
@@ -203,18 +416,26 @@ These are not all defects. They are known follow-up tasks from documentation, pl
 
 ### Mobile HUD And Readability
 
-- Design a compact shot setup HUD that does not cover the tee/current lie or wind-lane labels.
-- Add a collapsed or drawer state for secondary readouts such as uncertainty, route wind details, and risk explanation.
+- Move or collapse the overlay so the bottom half of the canvas (y=500–750) is fully visible during shot setup.
+- Fix aim readout truncation: allow wrap or use abbreviated format (`6° R`).
 - Add responsive layout checks for at least one narrow mobile viewport and one desktop viewport.
 - Add Playwright visual assertions or screenshot review steps for label clipping and HUD overlap.
 
 ### Forecast, Labels, And Route Reading
 
-- Clamp in-canvas forecast labels inside the visible playfield.
-- Replace long in-canvas forecast text with shorter chips.
-- Add adaptive label placement so the current lie, forecast, wind lanes, basket, and OB labels do not stack on top of each other.
-- Tune first-shot defaults so the starting recommendation is readable and not immediately high-risk.
+- Prevent forecast label from overlapping hazard labels when aiming left or into OB; offset label direction away from course elements.
+- Tune first-shot defaults so all three characters see `Low - open lane` on the default suggestion.
 - Reduce baseline first-drive uncertainty while keeping risky shots visibly uncertain.
+
+### Character Select
+
+- Replace `LOCKED` badge with `SELECTED` or a checkmark on active character.
+- Visually connect the tab row to the character cards (move tabs closer or use a carousel).
+
+### Shot Setup And Flight
+
+- Disable or relabel `Throw disc` button during flight animation; if queuing is kept, show a visible queue confirmation.
+- Decide on a durable layout split between the persistent control layer and the collapsible detail layer.
 
 ### Wind And Course Strategy
 
@@ -229,17 +450,26 @@ These are not all defects. They are known follow-up tasks from documentation, pl
 - Add consistent hazard boundary styling for ruins, mushrooms, and rough.
 - Ensure every lie-quality change is visually explainable from the course.
 - Decide whether mushrooms should be decorative only or a rule-bearing hazard.
+- Extend ground/rough band in flight view so props outside the fairway rectangle are visually anchored.
 
 ### Putting
 
+- Add a prominent drag prompt or crosshair pulse animation when entering putting mode.
 - Add miss feedback that explains aim, power, or wind cause.
 - Add chain, rim, and miss visual states.
 - Tune putting forgiveness after the throw game has stronger route decisions.
 
+### Score Screen
+
+- Remove border/button styling from flavor-text labels so they are not mistaken for actions.
+- Fix backdrop prop bleed below score card border.
+- Improve hole name legibility against gold circle (use dark ink or reposition).
+
 ### Characters And Progression
 
 - Revisit goblin names and special abilities after the first playable hole is stable.
-- Decide whether characters need separate large portraits and small gameplay sprites.
+- Replace placeholder portrait geometry with distinct pixel-art silhouettes.
+- Increase stat bar height and fill contrast for readability at phone viewing distance.
 - Decide whether stat differences are enough or if each goblin needs a signature ability.
 
 ### Art And Assets
@@ -248,6 +478,7 @@ These are not all defects. They are known follow-up tasks from documentation, pl
 - Decide whether to generate large character portraits, small gameplay sprites, or both.
 - Add goblin throw, idle, success, and miss reactions.
 - Add more course props only after hazard readability is solved.
+- Add a meaningful visual to the title screen upper zone (goblin trio, landscape, or tighter layout).
 
 ### Technical And Tooling
 
@@ -257,6 +488,24 @@ These are not all defects. They are known follow-up tasks from documentation, pl
 - Defer Phaser bundle-size work until gameplay stabilizes.
 
 ## Recently Resolved
+
+### HUD Screen-State Reduced From 8 Rows To 4
+
+Status: Resolved
+
+The shot setup screen-state panel was cut from 8 rows (Current lie, Lie quality, Target, Forecast, Uncertainty, Wind lane, Risk read, Next action) to 4 rows (Lie, Wind, Forecast, Risk). Redundant and canvas-duplicated information was removed.
+
+### Canvas Forecast Labels Shortened To Chips
+
+Status: Resolved
+
+`previewLandingLabel` now returns short chips: `OB risk`, `Near chains`, `high putt`, `medium landing`, etc. Position clamping was tightened to `x: [86, 282], y: [200, 488]`.
+
+### Default First Drive Aim Moved Off Scramble Zone
+
+Status: Resolved
+
+`setSuggestedThrowDefaults` now sets `aimOffsetDegrees = 6` for long drives, shifting all three characters' default landing from the scramble zone at x=62–134 to open fairway. Risk reads `Medium - shape touch` or better rather than `High - blocked stance`.
 
 ### Exact Deterministic Landing Preview Made Throws Too Solved
 
