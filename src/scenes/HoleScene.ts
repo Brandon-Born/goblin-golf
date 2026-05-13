@@ -9,6 +9,9 @@ const PUTT_BASKET = { x: 195, y: 300 };
 const PUTT_TEE = { x: 195, y: 560 };
 const COURSE_CENTER_X = 195;
 const AIM_DRAG_TOP = 168;
+const POWER_ZONE_Y = 575;    // canvas Y below which pointer input sets power instead of aim
+const CANVAS_BOTTOM_Y = 734; // canvas Y where power drag reads as zero
+const POWER_DRAG_RANGE = 190; // pixel span from zero to full power along the canvas
 
 export class HoleScene extends Phaser.Scene {
   private aimOffsetDegrees = 0;
@@ -77,20 +80,8 @@ export class HoleScene extends Phaser.Scene {
     this.add.text(348, 318, "OB", { color: "#f6f0d2", fontFamily: "Trebuchet MS", fontSize: "18px" }).setOrigin(0.5);
     this.drawWindZones();
 
-    this.add.circle(basket.x, basket.y, 46, 0xe2d36c, 0.14).setStrokeStyle(4, 0xe2d36c, 0.7);
-    this.add.circle(basket.x, basket.y, 28, 0x10150f, 0.58).setStrokeStyle(4, 0xd8c66a);
+    this.drawBasketTarget(basket.x, basket.y);
     this.drawBasketIcon(basket.x, basket.y + 10, 0.64);
-    this.add
-      .text(basket.x, basket.y - 56, "BASKET TARGET", {
-        color: "#10150f",
-        fontFamily: "Trebuchet MS",
-        fontSize: "12px",
-        fontStyle: "bold",
-        backgroundColor: "#f6f0d2",
-        padding: { x: 6, y: 3 },
-      })
-      .setOrigin(0.5)
-      .setDepth(7);
 
     this.drawHazardLabel(112, 270, "RUINS", "SCRAMBLE");
     this.drawHazardLabel(282, 370, "RUINS", "SCRAMBLE");
@@ -142,6 +133,22 @@ export class HoleScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(7);
     this.updateAimLine();
+  }
+
+  private drawBasketTarget(x: number, y: number) {
+    this.add.circle(x, y, 44, 0xe2d36c, 0.14).setStrokeStyle(4, 0xe2d36c, 0.68);
+    this.add.circle(x, y, 28, 0x10150f, 0.6).setStrokeStyle(4, 0xd8c66a);
+    this.add
+      .text(x, y - 54, "BASKET TARGET", {
+        color: "#10150f",
+        fontFamily: "Trebuchet MS",
+        fontSize: "12px",
+        fontStyle: "bold",
+        backgroundColor: "#f6f0d2",
+        padding: { x: 6, y: 3 },
+      })
+      .setOrigin(0.5)
+      .setDepth(7);
   }
 
   private drawBasketIcon(x: number, y: number, scale: number) {
@@ -260,9 +267,6 @@ export class HoleScene extends Phaser.Scene {
     }
 
     const basket = this.worldToScreen(gameSession.hole.basket);
-    this.add.circle(basket.x, basket.y, 42, 0xe2d36c, 0.14).setStrokeStyle(3, 0xe2d36c, 0.65);
-    this.add.circle(basket.x, basket.y, 28, 0x1a1510).setStrokeStyle(4, 0xd8c66a);
-    this.add.circle(basket.x, basket.y, 9, 0xf6f0d2);
     this.add
       .text(COURSE_CENTER_X, 86, "FLIGHT: DISC PATH", {
         color: "#f6f0d2",
@@ -271,16 +275,8 @@ export class HoleScene extends Phaser.Scene {
         fontStyle: "bold",
       })
       .setOrigin(0.5);
-    this.add
-      .text(basket.x, basket.y - 52, "BASKET TARGET", {
-        color: "#10150f",
-        fontFamily: "Trebuchet MS",
-        fontSize: "12px",
-        fontStyle: "bold",
-        backgroundColor: "#f6f0d2",
-        padding: { x: 6, y: 3 },
-      })
-      .setOrigin(0.5);
+    this.drawBasketTarget(basket.x, basket.y);
+    this.add.circle(basket.x, basket.y, 9, 0xf6f0d2); // center dot accent for flight view
     this.lieMarker = this.add.circle(0, 0, 13, 0xe2d36c, 0.45).setStrokeStyle(4, 0xf6f0d2);
     this.aimLine = this.add.line(0, 0, 195, 734, 195, 438, 0xe2d36c, 0.85).setLineWidth(5).setVisible(false);
     this.updateLieMarker();
@@ -331,14 +327,10 @@ export class HoleScene extends Phaser.Scene {
     this.addStatusPanel("Throw setup", this.status);
     const forecast = gameSession.forecastThrow(this.currentShotInput());
     this.addScreenStatePanel([
-      ["Current lie", "YOUR DISC"],
-      ["Lie quality", this.currentLieQualityLabel()],
-      ["Target", `BASKET ${Math.round(gameSession.distanceToBasket)} ft`],
-      ["Forecast", this.previewSummary()],
-      ["Uncertainty", `${Math.round(Math.hypot(forecast.landingZone.radiusX, forecast.landingZone.radiusY))} ft`],
-      ["Wind lane", this.routeWindLabel(forecast)],
-      ["Risk read", this.previewRiskLabel(forecast)],
-      ["Next action", "Set aim and power, then Throw disc"],
+      ["Lie", this.currentLieQualityLabel()],
+      ["Wind", this.routeWindLabel(forecast)],
+      ["Forecast", this.previewLandingLabel(forecast)],
+      ["Risk", this.previewRiskLabel(forecast)],
     ]);
 
     const aimCard = this.createElement("div", "control-card split-card");
@@ -517,6 +509,39 @@ export class HoleScene extends Phaser.Scene {
     }
   }
 
+  private updateDragReadouts() {
+    if (this.mode !== "setup") return;
+    const forecast = gameSession.forecastThrow(this.currentShotInput());
+    const powerPercent = `${Math.round(this.power * 100)}%`;
+
+    for (const readout of this.overlay.querySelectorAll<HTMLElement>(".readout")) {
+      const label = readout.querySelector(".readout-label")?.textContent?.trim();
+      const valueEl = readout.querySelector<HTMLElement>(".readout-value");
+      if (!valueEl) continue;
+      if (label === "Aim") valueEl.textContent = this.formatAimOffset();
+      if (label === "Power") valueEl.textContent = powerPercent;
+    }
+
+    const pad = this.overlay.querySelector<HTMLElement>(".power-pad");
+    if (pad) {
+      const fill = pad.querySelector<HTMLElement>(".power-fill");
+      const thumb = pad.querySelector<HTMLElement>(".power-thumb");
+      const padLabel = pad.querySelector<HTMLElement>(".power-label");
+      if (fill) fill.style.height = powerPercent;
+      if (thumb) thumb.style.bottom = powerPercent;
+      if (padLabel) padLabel.textContent = `Throw power: ${powerPercent}`;
+      pad.setAttribute("aria-valuenow", String(Math.round(this.power * 100)));
+    }
+
+    for (const row of this.overlay.querySelectorAll(".screen-state-row")) {
+      const label = row.querySelector("dt")?.textContent?.trim();
+      const dd = row.querySelector<HTMLElement>("dd");
+      if (!label || !dd) continue;
+      if (label === "Forecast") dd.textContent = this.previewLandingLabel(forecast);
+      if (label === "Risk") dd.textContent = this.previewRiskLabel(forecast);
+    }
+  }
+
   private createElement<K extends keyof HTMLElementTagNameMap>(tag: K, className: string) {
     const element = document.createElement(tag);
     if (className) {
@@ -540,7 +565,7 @@ export class HoleScene extends Phaser.Scene {
     if (
       this.mode !== "setup" ||
       this.controlsLocked ||
-      event.clientY < 575 ||
+      event.clientY < POWER_ZONE_Y ||
       event.target instanceof HTMLButtonElement ||
       (event.target instanceof HTMLElement && Boolean(event.target.closest(".power-pad")))
     ) {
@@ -554,10 +579,10 @@ export class HoleScene extends Phaser.Scene {
     }
 
     event.preventDefault();
-    this.power = Phaser.Math.Clamp((734 - event.clientY) / 190, 0.25, 1);
+    this.power = Phaser.Math.Clamp((CANVAS_BOTTOM_Y - event.clientY) / POWER_DRAG_RANGE, 0.25, 1);
     this.updateAimLine();
     this.updateHud();
-    this.renderOverlay();
+    this.updateDragReadouts();
   }
 
   private handleDrag(pointer: Phaser.Input.Pointer) {
@@ -579,15 +604,15 @@ export class HoleScene extends Phaser.Scene {
       return;
     }
 
-    if (pointer.y < 575 && pointer.y > AIM_DRAG_TOP) {
+    if (pointer.y < POWER_ZONE_Y && pointer.y > AIM_DRAG_TOP) {
       const dx = pointer.x - 195;
       this.aimOffsetDegrees = Phaser.Math.Clamp(dx / 4, -42, 42);
-    } else if (pointer.y >= 575) {
-      this.power = Phaser.Math.Clamp((734 - pointer.y) / 190, 0.25, 1);
+    } else if (pointer.y >= POWER_ZONE_Y) {
+      this.power = Phaser.Math.Clamp((CANVAS_BOTTOM_Y - pointer.y) / POWER_DRAG_RANGE, 0.25, 1);
     }
     this.updateAimLine();
     this.updateHud();
-    this.renderOverlay();
+    this.updateDragReadouts();
   }
 
   private throwDisc() {
@@ -758,8 +783,8 @@ export class HoleScene extends Phaser.Scene {
     this.aimArrow?.setVisible(false);
     this.aimTarget?.setVisible(false);
     this.aimLabel?.setPosition(
-      Phaser.Math.Clamp(labelPoint.x + 48, 84, 306),
-      Phaser.Math.Clamp(labelPoint.y, 222, 506),
+      Phaser.Math.Clamp(labelPoint.x + 48, 86, 282),
+      Phaser.Math.Clamp(labelPoint.y, 200, 488),
     );
     this.aimLabel?.setText(this.previewLandingLabel(forecast));
   }
@@ -1026,6 +1051,7 @@ export class HoleScene extends Phaser.Scene {
     if (distance > 470) {
       this.disc = "driver";
       this.power = 0.9;
+      this.aimOffsetDegrees = 6; // steer toward fairway center; tee and basket share x=120, center is at x=180
       return;
     }
 
@@ -1075,32 +1101,25 @@ export class HoleScene extends Phaser.Scene {
     return `${Math.abs(rounded)} deg ${rounded > 0 ? "right" : "left"}`;
   }
 
-  private previewSummary() {
-    const forecast = gameSession.forecastThrow(this.currentShotInput());
-    const shape = `${describeAngle(this.releaseAngle)} ${describeDisc(this.disc)}`;
-
-    return `${shape}: ${this.previewLandingLabel(forecast)}`;
-  }
-
   private previewLandingLabel(forecast: ShotForecast) {
     if (forecast.reliefLikely) {
-      return "OB pressure / relief likely";
+      return "OB risk";
     }
 
     const basketDistance = distanceBetween(forecast.likelyLie, gameSession.hole.basket);
     if (basketDistance <= gameSession.hole.tapInRange) {
-      return `${forecast.confidence} confidence near chains`;
+      return "Near chains";
     }
 
     if (basketDistance <= gameSession.hole.puttingRange) {
-      return `${forecast.confidence} confidence putt look`;
+      return `${forecast.confidence} putt`;
     }
 
     if (basketDistance <= gameSession.hole.puttingRange * 1.8) {
-      return `${forecast.confidence} confidence short approach`;
+      return `${forecast.confidence} short`;
     }
 
-    return `${forecast.confidence} confidence landing zone`;
+    return `${forecast.confidence} landing`;
   }
 
   private previewRiskLabel(forecast: ShotForecast) {
@@ -1129,7 +1148,7 @@ export class HoleScene extends Phaser.Scene {
     const likelyLieQuality = forecast.likelyLieQuality;
 
     if (likelyLieQuality === "scramble") {
-      return "High - blocked stance";
+      return "High - hazard lie";
     }
 
     if (likelyLieQuality === "rough") {
