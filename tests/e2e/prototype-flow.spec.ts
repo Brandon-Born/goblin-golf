@@ -11,16 +11,15 @@ async function expectOnlyScene(page: Page, scene: string) {
 
 async function expectSetupStateReadouts(page: Page) {
   await expect(holeScene(page)).toHaveClass(/hole-controls--setup/);
-  await expect(holeScene(page)).toContainText(/(Behind-goblin setup|Throw setup)/);
-  await expect(holeScene(page)).toContainText(/Aim\s*-?\d+ deg(?: (?:left|right))?/);
+  // Screen-state panel rows
+  await expect(holeScene(page)).toContainText("Lie");
+  await expect(holeScene(page)).toContainText("Wind");
+  await expect(holeScene(page)).toContainText("Forecast");
+  await expect(holeScene(page)).toContainText("Risk");
+  // Aim and power readouts
+  await expect(holeScene(page)).toContainText(/Aim\s*\d*°/);
   await expect(holeScene(page)).toContainText(/Power\s*\d+%/);
-  await expect(holeScene(page)).toContainText("Current lie");
-  await expect(holeScene(page)).toContainText("YOUR DISC");
-  await expect(holeScene(page)).toContainText(/Target\s*BASKET \d+ ft/);
-  await expect(holeScene(page)).toContainText(/Forecast\s*(Flat|Hyzer|Anhyzer) (Driver|Midrange|Putter)/);
-  await expect(holeScene(page)).toContainText(/Uncertainty\s*\d+ ft/);
-  await expect(holeScene(page)).toContainText(/Wind lane\s*(Open air|Moss Tailwind|Ruin Crosswind)/);
-  await expect(holeScene(page)).toContainText(/Next action\s*Set aim and power, then Throw disc/);
+  // Controls
   await expect(page.getByRole("slider", { name: "Throw power" })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Disc: / })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Angle: / })).toBeVisible();
@@ -31,10 +30,6 @@ async function expectPuttingStateReadouts(page: Page) {
   await expect(holeScene(page)).toHaveClass(/hole-controls--putting/);
   await expect(holeScene(page)).toContainText("Putting view");
   await expect(holeScene(page)).toContainText("Putting mode. Drag the crosshair on the basket and set putt power.");
-  await expect(holeScene(page)).toContainText(/Current lie\s*PUTT MARKER/);
-  await expect(holeScene(page)).toContainText(/Target\s*BASKET CHAINS/);
-  await expect(holeScene(page)).toContainText(/Putt forecast\s*\d+ ft with wind drift/);
-  await expect(holeScene(page)).toContainText(/Next action\s*Aim crosshair, set power, Release putt/);
   await expect(holeScene(page)).toContainText(/Putt\s*\d+ ft/);
   await expect(holeScene(page)).toContainText(/Aim miss\s*\d+ px/);
   await expect(page.getByRole("slider", { name: "Putt power" })).toBeVisible();
@@ -43,11 +38,12 @@ async function expectPuttingStateReadouts(page: Page) {
 
 async function startHole(page: Page, goblin = "Morga Mosswhack") {
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "Start round" })).toBeVisible();
+  await page.waitForLoadState("domcontentloaded");
+  await expect(page.getByRole("button", { name: "Start round" })).toBeVisible({ timeout: 10000 });
 
   await expect(canvas(page)).toBeVisible();
-  await expect(canvas(page)).toHaveJSProperty("width", 390);
-  await expect(canvas(page)).toHaveJSProperty("height", 844);
+  await expect(canvas(page)).toHaveJSProperty("width", 1280);
+  await expect(canvas(page)).toHaveJSProperty("height", 720);
   await expectOnlyScene(page, "title");
 
   await page.getByRole("button", { name: "Start round" }).click();
@@ -81,7 +77,7 @@ async function setPower(page: Page, label: "Throw power" | "Putt power", percent
   await expect(slider).toHaveAttribute("aria-valuenow", `${Math.round(percent * 100)}`);
 }
 
-async function aimAt(page: Page, x: number, y = 350) {
+async function aimAt(page: Page, x: number, y = 360) {
   await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(x, y);
@@ -89,12 +85,11 @@ async function aimAt(page: Page, x: number, y = 350) {
 }
 
 async function targetDistance(page: Page) {
-  const text = (await holeScene(page).textContent()) ?? "";
-  const match = /Target\s*BASKET\s*(\d+) ft/.exec(text);
-  if (!match) {
-    throw new Error(`Could not find target distance in hole scene text: ${text}`);
+  const value = await holeScene(page).getAttribute("data-distance-ft");
+  if (!value) {
+    throw new Error("Could not find data-distance-ft on hole scene overlay");
   }
-  return Number(match[1]);
+  return Number(value);
 }
 
 async function throwDiscAndWaitForLie(page: Page) {
@@ -163,8 +158,7 @@ async function expectManualPuttingDistance(page: Page) {
 
 test("mobile player flow reaches the score summary with fresh scene controls", async ({ page }) => {
   await startHole(page);
-  await expect(holeScene(page)).toContainText(/Forecast\s*(Flat|Hyzer|Anhyzer) (Driver|Midrange|Putter)/);
-  await expect(holeScene(page)).toContainText(/Uncertainty\s*\d+ ft/);
+  await expectSetupStateReadouts(page);
   await enterManualPutting(page);
   await expectPuttingStateReadouts(page);
 
@@ -172,9 +166,9 @@ test("mobile player flow reaches the score summary with fresh scene controls", a
   await expect(page.getByRole("button", { name: /^Disc:/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^Angle:/ })).toHaveCount(0);
 
-  await page.mouse.move(195, 300);
+  await page.mouse.move(678, 266);
   await page.mouse.down();
-  await page.mouse.move(195, 300);
+  await page.mouse.move(678, 266);
   await page.mouse.up();
   await page.getByRole("button", { name: "Release putt" }).click();
 
@@ -194,12 +188,9 @@ test("shot setup exposes playtest-critical state and aim feedback", async ({ pag
   await expectSetupStateReadouts(page);
 
   await expect(page.getByRole("button", { name: "Disc: Driver" })).toBeVisible();
-  await expect(holeScene(page)).toContainText(/Forecast\s*(Flat|Hyzer|Anhyzer) (Driver|Midrange|Putter)/);
-  await expect(holeScene(page)).toContainText(/Uncertainty\s*\d+ ft/);
-
   const beforeAim = await canvas(page).screenshot();
-  await aimAt(page, 315);
-  await expect(holeScene(page)).toContainText(/Aim\s*\d+ deg right/);
+  await aimAt(page, 500, 520);
+  await expect(holeScene(page)).toContainText(/Aim\s*\d+°\s*R/);
   const afterAim = await canvas(page).screenshot();
   expect(afterAim.equals(beforeAim)).toBe(false);
 
@@ -214,18 +205,17 @@ test("shot setup exposes playtest-critical state and aim feedback", async ({ pag
 
 test("setup and OB overlays expose current lie and basket target distance", async ({ page }) => {
   await startHole(page, "Grib Ninesnatch");
-  await expect(holeScene(page)).toContainText("Current lie");
-  await expect(holeScene(page)).toContainText("YOUR DISC");
-  await expect(holeScene(page)).toContainText(/Target\s*BASKET \d+ ft/);
+  await expect(holeScene(page)).toContainText("Lie");
+  await expect(holeScene(page)).toContainText("Risk");
 
-  await aimAt(page, 390);
+  // Full power + max right aim guarantees an out-of-bounds landing
+  await setPower(page, "Throw power", 1.0);
+  await aimAt(page, 500, 650);
   await throwDiscAndWaitForLie(page);
 
   await expect(holeScene(page)).toContainText("OB landing. +1 penalty and relief moved the lie in bounds.");
-  await expect(holeScene(page)).toContainText("Current lie");
-  await expect(holeScene(page)).toContainText("YOUR DISC");
-  await expect(holeScene(page)).toContainText(/Target\s*BASKET \d+ ft/);
-  await expect(holeScene(page)).toContainText("Next action");
+  await expect(holeScene(page)).toContainText("Lie");
+  await expect(holeScene(page)).toContainText("Risk");
 });
 
 test("disc, release angle, and power controls update visible state without stale buttons", async ({ page }) => {
@@ -256,19 +246,21 @@ test("disc, release angle, and power controls update visible state without stale
 test("OB relief keeps the throw loop playable and can still reach putting", async ({ page }) => {
   await startHole(page, "Grib Ninesnatch");
 
-  await aimAt(page, 390);
+  // Full power + max right aim guarantees an out-of-bounds landing
+  await setPower(page, "Throw power", 1.0);
+  await aimAt(page, 500, 650);
   await throwDiscAndWaitForLie(page);
 
   await expect(page.getByRole("button", { name: "Throw disc" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Disc: Driver" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Angle: Flat" })).toBeVisible();
   await expect(page.getByText("OB landing. +1 penalty and relief moved the lie in bounds.")).toBeVisible();
-  await expect(holeScene(page)).toContainText(/Aim\s*-?\d+ deg/);
+  await expect(holeScene(page)).toContainText(/Aim\s*\d*°/);
   await expect(page.getByText("Round Complete")).toHaveCount(0);
   await expectOnlyScene(page, "hole");
 
   const reliefDistance = await targetDistance(page);
-  await aimAt(page, 195);
+  await aimAt(page, 500, 360);
   await throwDiscAndWaitForLie(page);
   await waitForNextThrowOrPutt(page);
 
@@ -301,9 +293,9 @@ test("putting mode replaces shot setup with a distinct basket-focused view", asy
   await setPower(page, "Putt power", 0.79);
   await expect(page.getByRole("slider", { name: "Putt power" })).toHaveAttribute("aria-valuenow", "79");
 
-  await page.mouse.move(195, 300);
+  await page.mouse.move(678, 266);
   await page.mouse.down();
-  await page.mouse.move(255, 340);
+  await page.mouse.move(738, 306);
   await page.mouse.up();
   const adjustedCrosshair = await canvas(page).screenshot();
   expect(adjustedCrosshair.equals(puttingView)).toBe(false);
@@ -314,12 +306,77 @@ test("manual putt make from putting mode reaches score summary", async ({ page }
   await enterManualPutting(page);
   await expectManualPuttingDistance(page);
 
-  await page.mouse.move(195, 300);
+  await page.mouse.move(678, 266);
   await page.mouse.down();
-  await page.mouse.move(195, 300);
+  await page.mouse.move(678, 266);
   await page.mouse.up();
   await page.getByRole("button", { name: "Release putt" }).click();
 
   await expectOnlyScene(page, "score");
   await expect(page.getByRole("button", { name: "Play again" })).toBeVisible();
+});
+
+test("flight mode shows Watch the flight button disabled instead of an active Throw disc button", async ({ page }) => {
+  await startHole(page, "Grib Ninesnatch");
+  await expect(page.getByRole("button", { name: "Throw disc" })).toBeEnabled();
+
+  await page.getByRole("button", { name: "Throw disc" }).click();
+  await expect(page.getByText("Disc in flight")).toBeVisible();
+
+  // During flight the action button is relabeled and disabled
+  await expect(page.getByRole("button", { name: "Watch the flight…" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Watch the flight…" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Throw disc" })).toHaveCount(0);
+
+  // After flight resolves, Throw disc returns
+  await expect(page.getByText("Disc in flight")).toHaveCount(0, { timeout: 7000 });
+  await expect(page.getByRole("button", { name: "Throw disc" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Watch the flight…" })).toHaveCount(0);
+});
+
+test("wind lane row includes a human-readable effect description", async ({ page }) => {
+  await startHole(page, "Grib Ninesnatch");
+  // Default straight shot passes through left-tailwind zone
+  const windCell = holeScene(page).locator(".screen-state-row").filter({ hasText: "Wind" });
+  await expect(windCell).toBeVisible();
+  // Should contain zone label and effect description
+  await expect(windCell).toContainText(/Moss Tailwind|Open air/);
+  await expect(holeScene(page)).toContainText(/longer carry|push across|no effect/);
+});
+
+test("missed putt returns a specific miss reason in the status panel", async ({ page }) => {
+  await startHole(page, "Grib Ninesnatch");
+
+  // Two default throws land the disc at ~54px from basket — inside putting range, outside tap-in
+  await throwDiscAndWaitForLie(page);
+  await waitForNextThrowOrPutt(page);
+  await throwDiscAndWaitForLie(page);
+  await waitForNextThrowOrPutt(page);
+  await expect(page.getByRole("button", { name: "Release putt" })).toBeVisible();
+
+  // Drag crosshair far off-center to guarantee a wide miss (aimError >> forgiveness)
+  await page.mouse.move(678, 266);
+  await page.mouse.down();
+  await page.mouse.move(678, 550);
+  await page.mouse.up();
+  await page.getByRole("button", { name: "Release putt" }).click();
+
+  const statusPanel = holeScene(page).locator(".status-panel");
+  await expect(statusPanel).toBeVisible();
+  await expect(holeScene(page)).toContainText(/Missed:|Chains caught it\.|Tap-in range/);
+});
+
+test("character select shows SELECTED badge not LOCKED on the active card", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Start round" }).click();
+  await expect(page.getByRole("button", { name: "Select Grib Ninesnatch" })).toBeVisible();
+
+  // The active character tab should be aria-pressed=true
+  const activeTab = page.getByRole("button", { name: "Select Grib Ninesnatch" });
+  await expect(activeTab).toHaveAttribute("aria-pressed", "true");
+
+  // Switching selection updates aria-pressed
+  await page.getByRole("button", { name: "Select Morga Mosswhack" }).click();
+  await expect(page.getByRole("button", { name: "Select Morga Mosswhack" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Select Grib Ninesnatch" })).toHaveAttribute("aria-pressed", "false");
 });

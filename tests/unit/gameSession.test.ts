@@ -131,4 +131,76 @@ describe("game session putting flow", () => {
     expect(nearPutt.putt({ aimOffset: aimNearForgivenessLimit, power: 0.38 }).made).toBe(true);
     expect(longPutt.putt({ aimOffset: aimNearForgivenessLimit, power: 0.95 }).made).toBe(false);
   });
+
+  it("returns no missReason on a made putt", () => {
+    const session = new GameSession();
+    session.holeState = {
+      lie: { x: HOLE_1.basket.x, y: HOLE_1.basket.y + 40 },
+      strokes: 2,
+      complete: false,
+      penaltyStrokes: 0,
+    };
+    const result = session.putt({ aimOffset: { x: 0, y: 0 }, power: 0.5 });
+
+    expect(result.made).toBe(true);
+    expect(result.missReason).toBeUndefined();
+  });
+
+  it("returns missReason 'wide right' when crosshair is right of basket", () => {
+    const session = new GameSession();
+    session.holeState = {
+      lie: { x: HOLE_1.basket.x, y: HOLE_1.basket.y + 40 },
+      strokes: 2,
+      complete: false,
+      penaltyStrokes: 0,
+    };
+    const result = session.putt({ aimOffset: { x: 60, y: 0 }, power: 0.5 });
+
+    expect(result.made).toBe(false);
+    expect(result.missReason).toBe("wide right");
+  });
+
+  it("returns missReason 'wide left' when crosshair is left of basket", () => {
+    const session = new GameSession();
+    session.holeState = {
+      lie: { x: HOLE_1.basket.x, y: HOLE_1.basket.y + 40 },
+      strokes: 2,
+      complete: false,
+      penaltyStrokes: 0,
+    };
+    const result = session.putt({ aimOffset: { x: -60, y: 0 }, power: 0.5 });
+
+    expect(result.made).toBe(false);
+    expect(result.missReason).toBe("wide left");
+  });
+
+  it("returns missReason 'short on power' for too-soft a putt", () => {
+    const session = new GameSession();
+    session.holeState = {
+      lie: { x: HOLE_1.basket.x, y: HOLE_1.basket.y + 80 },
+      strokes: 2,
+      complete: false,
+      penaltyStrokes: 0,
+    };
+    // idealPower = clamp(80/90, 0.38, 0.95) ≈ 0.889; power=0.25 → powerError=0.64 > 0.18
+    const result = session.putt({ aimOffset: { x: 0, y: 0 }, power: 0.25 });
+
+    expect(result.made).toBe(false);
+    expect(result.missReason).toBe("short on power");
+  });
+
+  it("returns missReason 'sailed long' for too-hard a putt", () => {
+    const session = new GameSession();
+    session.holeState = {
+      lie: { x: HOLE_1.basket.x, y: HOLE_1.basket.y + 30 },
+      strokes: 2,
+      complete: false,
+      penaltyStrokes: 0,
+    };
+    // idealPower = clamp(30/90, 0.38, 0.95) = 0.38; power=0.95 → powerError=0.57 > 0.18
+    const result = session.putt({ aimOffset: { x: 0, y: 0 }, power: 0.95 });
+
+    expect(result.made).toBe(false);
+    expect(result.missReason).toBe("sailed long");
+  });
 });

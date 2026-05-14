@@ -47,19 +47,21 @@ canvas {
 
 .hole-controls {
   position: fixed;
-  left: 50%;
-  bottom: max(8px, env(safe-area-inset-bottom));
+  top: 80px;
+  right: max(16px, calc(50vw - 460px));
+  bottom: auto;
+  left: auto;
   z-index: 20;
   display: grid;
-  width: min(374px, calc(100vw - 16px));
-  transform: translateX(-50%);
+  width: 280px;
+  transform: none;
   gap: 6px;
   color: var(--gg-cream);
 }
 
 .hole-controls--setup,
 .hole-controls--putting {
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  grid-template-columns: 1fr;
 }
 
 .hole-controls--setup .status-panel,
@@ -229,7 +231,7 @@ canvas {
 }
 
 .hole-controls--setup .button-grid {
-  grid-template-columns: 1fr 1fr 1.15fr;
+  grid-template-columns: 1fr;
 }
 
 .button-grid .primary-action {
@@ -325,31 +327,7 @@ button:disabled {
   font-size: 16px;
 }
 
-@media (min-width: 760px) and (min-height: 620px) {
-  .hole-controls {
-    top: 80px;
-    right: max(16px, calc(50vw - 460px));
-    bottom: auto;
-    left: auto;
-    width: 260px;
-    transform: none;
-  }
-
-  .hole-controls--setup,
-  .hole-controls--putting {
-    grid-template-columns: 1fr;
-  }
-
-  .hole-controls--setup .button-grid,
-  .hole-controls--putting .button-grid.single-action {
-    grid-template-columns: 1fr;
-  }
-
-  .hole-controls--setup .button-grid .primary-action,
-  .hole-controls--putting .button-grid.single-action .primary-action {
-    grid-column: 1 / -1;
-  }
-}
+/* Landscape is now the default layout; no breakpoint needed. */
 
 @media (max-width: 380px), (max-height: 720px) {
   .hole-controls {

@@ -177,7 +177,7 @@ describe("deterministic game logic", () => {
   it("adds a stroke, OB penalty, and relief lie for out-of-bounds throws", () => {
     const state = createInitialHoleState(HOLE_1);
     const result = calculateShot(state, CHARACTERS[0], HOLE_1, calm, {
-      aimDegrees: 0,
+      aimDegrees: 90,
       power: 1,
       releaseAngle: "flat",
       disc: "driver",
@@ -197,7 +197,7 @@ describe("deterministic game logic", () => {
   it("keeps OB relief in bounds, incomplete, and playable for the next throw", () => {
     const state = createInitialHoleState(HOLE_1);
     const obResult = calculateShot(state, CHARACTERS[0], HOLE_1, calm, {
-      aimDegrees: 0,
+      aimDegrees: 90,
       power: 1,
       releaseAngle: "flat",
       disc: "driver",
@@ -321,5 +321,39 @@ describe("deterministic game logic", () => {
 
     expect(isPuttingAvailable(state, HOLE_1)).toBe(true);
     expect(isTapInAvailable(state, HOLE_1)).toBe(false);
+  });
+
+  it("produces medium or high confidence for a default first-drive at controlled power", () => {
+    const state = createInitialHoleState(HOLE_1);
+    const aimDegrees = (Math.atan2(HOLE_1.basket.y - HOLE_1.tee.y, HOLE_1.basket.x - HOLE_1.tee.x) * 180) / Math.PI;
+    const forecast = calculateShotForecast(state, CHARACTERS[0], HOLE_1, calm, {
+      aimDegrees,
+      power: 0.78,
+      releaseAngle: "flat",
+      disc: "driver",
+    });
+
+    expect(["high", "medium"]).toContain(forecast.confidence);
+  });
+
+  it("produces lower confidence than controlled-power for a risky full-power drive", () => {
+    const state = createInitialHoleState(HOLE_1);
+    const aimDegrees = (Math.atan2(HOLE_1.basket.y - HOLE_1.tee.y, HOLE_1.basket.x - HOLE_1.tee.x) * 180) / Math.PI;
+    const controlled = calculateShotForecast(state, CHARACTERS[0], HOLE_1, calm, {
+      aimDegrees,
+      power: 0.78,
+      releaseAngle: "flat",
+      disc: "driver",
+    });
+    const risky = calculateShotForecast(state, CHARACTERS[0], HOLE_1, calm, {
+      aimDegrees,
+      power: 1,
+      releaseAngle: "hyzer",
+      disc: "driver",
+    });
+
+    const confidenceRank = { high: 0, medium: 1, low: 2 };
+    expect(confidenceRank[risky.confidence]).toBeGreaterThanOrEqual(confidenceRank[controlled.confidence]);
+    expect(landingRadius(risky)).toBeGreaterThan(landingRadius(controlled));
   });
 });

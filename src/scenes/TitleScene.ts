@@ -11,12 +11,15 @@ export class TitleScene extends Phaser.Scene {
     this.clearControls();
     this.cameras.main.setBackgroundColor("#172419");
     this.drawBackdrop();
+    const W = this.scale.width, H = this.scale.height;
+    const cx = W / 2;
 
+    // Title block — left third
     this.add
-      .text(195, 154, "Goblin\nGolf", {
+      .text(cx * 0.42, H * 0.22, "Goblin\nGolf", {
         color: "#f6f0d2",
         fontFamily: "Trebuchet MS",
-        fontSize: "54px",
+        fontSize: "64px",
         fontStyle: "bold",
         align: "center",
         stroke: "#10150f",
@@ -25,7 +28,7 @@ export class TitleScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.add
-      .text(195, 248, "Hole 1  -  Ruincap Run", {
+      .text(cx * 0.42, H * 0.56, "Hole 1  -  Ruincap Run", {
         color: "#e2d36c",
         fontFamily: "Trebuchet MS",
         fontSize: "20px",
@@ -33,7 +36,7 @@ export class TitleScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.add
-      .text(195, 682, "Pick a goblin. Read the wind.\nPark the disc by the ruins.", {
+      .text(cx * 0.42, H * 0.82, "Pick a goblin. Read the wind.\nPark the disc by the ruins.", {
         color: "#dceab5",
         fontFamily: "Trebuchet MS",
         fontSize: "18px",
@@ -72,33 +75,39 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private drawBackdrop() {
-    this.add.rectangle(195, 422, 390, 844, 0x172419);
+    const W = this.scale.width, H = this.scale.height;
+    const cx = W / 2, cy = H / 2;
 
-    for (let y = 304; y <= 704; y += 38) {
-      const width = 250 - Math.abs(y - 504) * 0.22;
-      this.add.rectangle(195, y, width, 24, 0x2f5f2e, 0.72);
-      this.add.rectangle(195, y + 12, width - 24, 5, 0x6a8732, 0.5);
+    this.add.rectangle(cx, cy, W, H, 0x172419);
+
+    // Fairway backdrop strips — center-right area
+    for (let x = cx + 20; x <= cx + 520; x += 48) {
+      const height = 280 - Math.abs(x - (cx + 270)) * 0.28;
+      this.add.rectangle(x, cy + 20, 32, height, 0x2f5f2e, 0.72);
+      this.add.rectangle(x + 16, cy + 20, 6, height - 24, 0x6a8732, 0.5);
     }
 
-    this.add.circle(79, 95, 42, 0x6a8732, 0.9);
-    this.add.circle(95, 95, 24, 0x82a548, 0.88);
-    this.add.circle(318, 176, 72, 0x5b3f8f, 0.44);
-    this.add.circle(284, 220, 40, 0x3f8f61, 0.35);
+    // Decorative circles
+    this.add.circle(cx - 120, H * 0.12, 42, 0x6a8732, 0.9);
+    this.add.circle(cx - 100, H * 0.12, 24, 0x82a548, 0.88);
+    this.add.circle(cx + 440, H * 0.22, 72, 0x5b3f8f, 0.44);
+    this.add.circle(cx + 400, H * 0.30, 40, 0x3f8f61, 0.35);
 
-    this.add.rectangle(195, 468, 236, 166, 0x2d3c24, 0.94).setStrokeStyle(4, 0xaec76d);
-    this.add.rectangle(195, 404, 188, 24, 0x786142, 0.9);
-    this.add.rectangle(195, 531, 206, 20, 0x786142, 0.9);
-    this.add.rectangle(132, 468, 20, 126, 0x786142, 0.9);
-    this.add.rectangle(258, 468, 20, 126, 0x786142, 0.9);
+    // Central basket scene
+    this.add.rectangle(cx + 120, cy + 20, 236, 166, 0x2d3c24, 0.94).setStrokeStyle(4, 0xaec76d);
+    this.add.rectangle(cx + 120, cy - 50, 188, 24, 0x786142, 0.9);
+    this.add.rectangle(cx + 120, cy + 100, 206, 20, 0x786142, 0.9);
+    this.add.rectangle(cx + 120 - 66, cy + 20, 20, 126, 0x786142, 0.9);
+    this.add.rectangle(cx + 120 + 66, cy + 20, 20, 126, 0x786142, 0.9);
 
-    this.drawBasket(195, 424);
-    this.drawDisc(115, 541, 0xf07b53);
-    this.drawDisc(280, 502, 0xe2d36c);
-    this.drawMushroom(80, 604, 1.15, 0xb85c38);
-    this.drawMushroom(308, 616, 0.95, 0x5b3f8f);
+    this.drawBasket(cx + 120, cy + 22);
+    this.drawDisc(cx + 40, cy + 100, 0xf07b53);
+    this.drawDisc(cx + 205, cy + 62, 0xe2d36c);
+    this.drawMushroom(cx - 50, cy + 160, 1.15, 0xb85c38);
+    this.drawMushroom(cx + 340, cy + 170, 0.95, 0x5b3f8f);
 
     this.add
-      .text(195, 376, "Tee box open", {
+      .text(cx + 120, cy - 78, "Tee box open", {
         color: "#10150f",
         fontFamily: "Trebuchet MS",
         fontSize: "18px",

@@ -106,7 +106,7 @@ Suggested next step:
 
 ### Selected Character Badge Reads As Locked Or Premium-Gated
 
-Status: Open
+Status: Resolved
 
 The selected character card displays a gold `LOCKED` badge in its top-right corner. In standard UI convention `LOCKED` signals that content is unavailable or requires a purchase. Here it means the character is the active selection. First-time players will likely interpret this as the character being unavailable to them.
 
@@ -125,7 +125,7 @@ Suggested next step:
 
 ### Character Tab Row Is Visually Disconnected From Cards
 
-Status: Open
+Status: Resolved
 
 The three character name tabs (`Grib`, `Morga`, `Skrak`) at the bottom of the character select screen are separated from the character cards above by approximately 150px of empty dark space. There is no visual line, bracket, or connecting element to show which card a tab refers to. A new player tapping `Morga` has no obvious cue showing which card just highlighted.
 
@@ -145,7 +145,7 @@ Suggested next step:
 
 ### Throw Disc Button Remains Active During Flight With No Queue Feedback
 
-Status: Open
+Status: Resolved
 
 After the player taps `Throw disc`, the disc enters the flight animation and the mode switches to `flight`. The overlay shows `Disc in flight / Watch the landing…` but also renders an active `Throw disc` button. Clicking it while flight is resolving queues a second throw. There is no visual indicator that the button is queuing rather than firing immediately, so repeated taps feel unresponsive.
 
@@ -165,7 +165,7 @@ Suggested next step:
 
 ### Putting Drag Instruction Is Not Prominent Enough
 
-Status: Open
+Status: Resolved
 
 The putting view starts with the crosshair centered on the basket (`Aim miss: 0 px`). The instruction text `Drag crosshair on basket` is rendered at 15px in the canvas at approximately y=512, below the large distance text and above the HUD overlay edge. Many players will not notice it and will simply click `Release putt` without ever adjusting aim.
 
@@ -185,7 +185,7 @@ Suggested next step:
 
 ### Wind Lanes Need Clearer Player Language
 
-Status: Open
+Status: Resolved
 
 Wind lanes are now rendered and sampled by shot physics, but the player-facing meaning is still terse. `Moss Tailwind 2.0` and `Ruin Crosswind 0.7` are readable as labels, but they do not explain whether the lane helps, hurts, or bends the shot.
 
@@ -201,7 +201,7 @@ Suggested next step:
 
 ### Forecast Uncertainty May Be Too Large By Default
 
-Status: Open
+Status: Resolved
 
 The current first-drive forecast can show uncertainty over 120 ft. That supports the goal of avoiding exact deterministic previews, but it may be too wide for players to make a confident first decision.
 
@@ -217,7 +217,7 @@ Suggested next step:
 
 ### Course Hazards Need Stronger Rule Affordance
 
-Status: Open
+Status: Resolved
 
 Ruins and mushrooms are visually present, and lie quality can become rough/scramble, but the course does not yet make every hazard's rule impact obvious at a glance.
 
@@ -233,7 +233,7 @@ Suggested next step:
 
 ### Putting Feedback Is Functional But Thin
 
-Status: Open
+Status: Resolved
 
 Putting works and is visually distinct, but missed-putt feedback is still basic. It does not yet clearly explain whether the player missed because of aim, power, or wind.
 
@@ -519,6 +519,67 @@ Implementation questions:
 - Add an E2E command for testing against an already-running dev server.
 - Consider configurable Playwright/dev-server ports.
 - Defer Phaser bundle-size work until gameplay stabilizes.
+
+## P3 - Refactoring And Code Health
+
+### Scramble Zones Have Two Sources Of Truth
+
+Status: Open
+
+`getLieQuality()` in `logic.ts` defines the three scramble zone rectangles with inline math from `hole.bounds`. `HoleScene.drawScrambleZoneBoundaries()` copies those same coordinates to draw boundary outlines. If the course layout changes, both files need updating independently.
+
+Suggested next step:
+
+- Extract a `getScrambleZones(hole: HoleConfig): Array<{x, y, width, height}>` function from `logic.ts`.
+- Have `drawScrambleZoneBoundaries()` call that function instead of duplicating the math.
+
+### Wind Zone Effect Descriptions Keyed By Magic String ID
+
+Status: Open
+
+`HoleScene.windEffectDescription()` identifies wind effects by checking `forecast.routeWindZones.includes("left-tailwind")` and `"right-crosswind"`. This ties UI label logic to specific string IDs from `data.ts`. Adding or renaming a zone silently stops showing the effect description.
+
+Suggested next step:
+
+- Add an `effect: "tailwind" | "crosswind" | "headwind"` field to `WindZone` in `types.ts`.
+- Derive the effect description from `zone.effect` instead of matching on `zone.id`.
+
+### HoleScene Is A 1300-Line God Object
+
+Status: Open
+
+`HoleScene` handles Phaser canvas rendering, DOM overlay construction, pointer input, tweens, and mode-switching (setup/flight/putting) in a single class. The three modes are interleaved enough that touching flight code requires navigating past putting code, and the class has grown fragile to extend.
+
+Impact:
+
+- Hard to reason about which state is active when reading any given method.
+- Any new mode or mechanic (e.g. a second hole, a new hazard interaction) will make the class larger still.
+
+Suggested next step:
+
+- Split into: a `HoleRenderer` (Phaser canvas drawing only), a `HoleOverlay` (DOM controls only), and a thin `HoleScene` coordinator that owns mode state and delegates to both.
+- Defer until a second hole is being built — the split is not worth the disruption while only one hole exists.
+
+### `setSuggestedThrowDefaults` Uses Magic Distance Thresholds
+
+Status: Open
+
+The distance thresholds in `setSuggestedThrowDefaults` (470, 260, 150) are unrelated to any `HoleConfig` field and don't scale with the course. They were tuned for Hole 1 and will need manual adjustment for every new hole.
+
+Suggested next step:
+
+- Express thresholds as fractions of `hole.bounds.height` or multiples of `hole.puttingRange` so they derive from the hole data rather than being hardcoded.
+
+### E2e Tests Drifted From Production Code
+
+Status: Open
+
+The e2e tests contained checks for `"Wind lane"`, `"Target BASKET X ft"`, `"Forecast Flat Driver"`, and `"Uncertainty X ft"` — all removed in the P1 refactor — that were silently wrong until the full suite was run against the live build. No CI gate caught the drift.
+
+Suggested next step:
+
+- Add `npm run test:e2e:server` to the CI pipeline so e2e tests run on every PR.
+- Consider lightweight DOM smoke assertions in `expectSetupStateReadouts` tied to CSS class names rather than display strings, so they survive label copy changes.
 
 ## Recently Resolved
 

@@ -5,15 +5,22 @@ import type { DiscType, LieQuality, ReleaseAngle, ShotForecast, ShotInput, ShotR
 
 type HoleMode = "setup" | "flight" | "putting";
 
-const PUTT_BASKET = { x: 195, y: 300 };
-const PUTT_TEE = { x: 195, y: 560 };
-const COURSE_CENTER_X = 195;
-const AIM_DRAG_TOP = 168;
-const POWER_ZONE_Y = 575;    // canvas Y below which pointer input sets power instead of aim
-const CANVAS_BOTTOM_Y = 734; // canvas Y where power drag reads as zero
-const POWER_DRAG_RANGE = 190; // pixel span from zero to full power along the canvas
+interface Layout {
+  cx: number;
+  cy: number;
+  playLeft: number;
+  playTop: number;
+  playRight: number;
+  playBottom: number;
+  playWidth: number;
+  playHeight: number;
+  fairwayH: number;
+  puttBasket: { x: number; y: number };
+  puttTee: { x: number; y: number };
+}
 
 export class HoleScene extends Phaser.Scene {
+  private layout!: Layout;
   private aimOffsetDegrees = 0;
   private power = 0.9;
   private puttPower = 0.64;
@@ -45,7 +52,30 @@ export class HoleScene extends Phaser.Scene {
     super("HoleScene");
   }
 
+  private computeLayout(): Layout {
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const cx = width / 2;
+    const cy = height / 2;
+    const playLeft = 48;
+    const playTop = 60;
+    const playWidth = width - playLeft - 300;
+    const playHeight = height - playTop * 2;
+    const fairwayH = Math.round(playHeight * 0.34);
+    return {
+      cx, cy,
+      playLeft, playTop,
+      playRight: playLeft + playWidth,
+      playBottom: playTop + playHeight,
+      playWidth, playHeight,
+      fairwayH,
+      puttBasket: { x: Math.round(width * 0.53), y: Math.round(height * 0.37) },
+      puttTee: { x: Math.round(width * 0.30), y: Math.round(height * 0.60) },
+    };
+  }
+
   create() {
+    this.layout = this.computeLayout();
     this.clearOverlay();
     this.mode = gameSession.mode === "putt" ? "putting" : "setup";
     if (this.mode === "setup") {
@@ -70,29 +100,41 @@ export class HoleScene extends Phaser.Scene {
   }
 
   private drawSetupView() {
+    const { cx, cy, playLeft, playWidth, playTop, playBottom, playHeight, fairwayH } = this.layout;
+    const W = this.scale.width, H = this.scale.height;
+    const playCx = playLeft + playWidth / 2;
+    const obH = (playHeight - fairwayH) / 2;
+
     const basket = this.worldToScreen(gameSession.hole.basket);
     const lie = this.worldToScreen(gameSession.holeState.lie);
 
-    this.add.rectangle(195, 422, 390, 844, 0x142018);
-    this.add.rectangle(195, 318, 246, 492, 0x416b34).setStrokeStyle(3, 0xd8c66a, 0.45);
-    this.add.rectangle(42, 318, 72, 492, 0x4d3c81, 0.86);
-    this.add.rectangle(348, 318, 72, 492, 0x4d3c81, 0.86);
-    this.add.text(42, 318, "OB", { color: "#f6f0d2", fontFamily: "Trebuchet MS", fontSize: "18px" }).setOrigin(0.5);
-    this.add.text(348, 318, "OB", { color: "#f6f0d2", fontFamily: "Trebuchet MS", fontSize: "18px" }).setOrigin(0.5);
+    this.add.rectangle(cx, cy, W, H, 0x142018);
+    // Fairway center strip
+    this.add.rectangle(playCx, cy, playWidth, fairwayH, 0x416b34).setStrokeStyle(3, 0xd8c66a, 0.45);
+    // OB top and bottom strips
+    this.add.rectangle(playCx, playTop + obH / 2, playWidth, obH, 0x4d3c81, 0.86);
+    this.add.rectangle(playCx, playBottom - obH / 2, playWidth, obH, 0x4d3c81, 0.86);
+    this.add.text(playLeft + 50, playTop + obH / 2, "OB", { color: "#f6f0d2", fontFamily: "Trebuchet MS", fontSize: "18px" }).setOrigin(0.5);
+    this.add.text(playLeft + 50, playBottom - obH / 2, "OB", { color: "#f6f0d2", fontFamily: "Trebuchet MS", fontSize: "18px" }).setOrigin(0.5);
     this.drawWindZones();
 
     this.drawBasketTarget(basket.x, basket.y);
-    this.drawBasketIcon(basket.x, basket.y + 10, 0.64);
+    this.drawBasketIcon(basket.x + 10, basket.y, 0.64);
 
-    this.drawHazardLabel(112, 270, "RUINS", "SCRAMBLE");
-    this.drawHazardLabel(282, 370, "RUINS", "SCRAMBLE");
-    this.drawMushroom(88, 430, 0xd14f41);
-    this.drawMushroom(304, 220, 0xf2e7b8);
+    this.drawScrambleZoneBoundaries();
+    const hazard1 = this.worldToScreen({ x: 265, y: 76 });
+    const hazard2 = this.worldToScreen({ x: 450, y: 278 });
+    this.drawHazardLabel(hazard1.x, hazard1.y, "RUINS", "SCRAMBLE LIE");
+    this.drawHazardLabel(hazard2.x, hazard2.y, "RUINS", "SCRAMBLE LIE");
+    const mush1 = this.worldToScreen({ x: 200, y: 265 });
+    const mush2 = this.worldToScreen({ x: 680, y: 80 });
+    this.drawMushroom(mush1.x, mush1.y, 0xd14f41);
+    this.drawMushroom(mush2.x, mush2.y, 0xf2e7b8);
 
     this.add.circle(lie.x, lie.y, 24, 0x10150f, 0.75).setStrokeStyle(4, 0xe2d36c);
     this.add.circle(lie.x, lie.y, 11, 0xf6f0d2).setStrokeStyle(3, gameSession.selectedCharacter.palette);
     this.add.circle(lie.x - 22, lie.y + 18, 14, gameSession.selectedCharacter.palette).setStrokeStyle(3, 0x10150f);
-    const lieLabelY = lie.y > 500 ? lie.y - 58 : lie.y + 46;
+    const lieLabelY = lie.y > cy ? lie.y - 58 : lie.y + 46;
     this.add
       .text(lie.x, lieLabelY, "CURRENT LIE / DISC", {
         color: "#10150f",
@@ -170,6 +212,28 @@ export class HoleScene extends Phaser.Scene {
     }
   }
 
+  private drawScrambleZoneBoundaries() {
+    const bounds = gameSession.hole.bounds;
+    const centerY = bounds.y + bounds.height / 2;
+    // Mirror the scramble zone rectangles from getLieQuality() in logic.ts
+    const zones = [
+      { wx: bounds.x + 172, wy: centerY - 144, ww: 90, wh: 80 },
+      { wx: bounds.x + 352, wy: centerY + 70, ww: 100, wh: 68 },
+      { wx: bounds.x + 552, wy: centerY - 144, ww: 90, wh: 80 },
+    ];
+    const graphics = this.add.graphics().setDepth(2);
+    graphics.lineStyle(2, 0xff8f6b, 0.72);
+    graphics.fillStyle(0xff8f6b, 0.08);
+    for (const { wx, wy, ww, wh } of zones) {
+      const tl = this.worldToScreen({ x: wx, y: wy });
+      const br = this.worldToScreen({ x: wx + ww, y: wy + wh });
+      const sw = br.x - tl.x;
+      const sh = br.y - tl.y;
+      graphics.fillRect(tl.x, tl.y, sw, sh);
+      graphics.strokeRect(tl.x, tl.y, sw, sh);
+    }
+  }
+
   private drawMushroom(x: number, y: number, color: number) {
     this.add.circle(x, y, 13, color);
     this.add.rectangle(x, y + 14, 9, 18, 0xe7d7ad);
@@ -219,47 +283,41 @@ export class HoleScene extends Phaser.Scene {
   }
 
   private drawCourse() {
-    this.add.rectangle(195, 422, 390, 844, 0x142018);
-    this.add.rectangle(195, 346, 318, 500, 0x233b26).setStrokeStyle(3, 0xf6f0d2, 0.18);
-    this.add.rectangle(195, 346, 230, 500, 0x5d8743, 0.9);
-    this.add.rectangle(76, 346, 52, 500, 0x4d3c81, 0.62);
-    this.add.rectangle(314, 346, 52, 500, 0x4d3c81, 0.62);
-    this.add.text(76, 346, "OB", { color: "#f1c8ff", fontFamily: "Trebuchet MS", fontSize: "14px" }).setOrigin(0.5).setRotation(Math.PI / 2);
-    this.add.text(314, 346, "OB", { color: "#f1c8ff", fontFamily: "Trebuchet MS", fontSize: "14px" }).setOrigin(0.5).setRotation(Math.PI / 2);
+    const { cx, cy, playLeft, playWidth, playTop, playBottom, playHeight, fairwayH } = this.layout;
+    const W = this.scale.width, H = this.scale.height;
+    const playCx = playLeft + playWidth / 2;
+    const obH = (playHeight - fairwayH) / 2;
+
+    this.add.rectangle(cx, cy, W, H, 0x142018);
+    this.add.rectangle(playCx, cy, playWidth + 120, fairwayH + 64, 0x233b26).setStrokeStyle(3, 0xf6f0d2, 0.18);
+    this.add.rectangle(playCx, cy, playWidth, fairwayH, 0x5d8743, 0.9);
+    this.add.rectangle(playCx, playTop + obH / 2, playWidth, obH, 0x4d3c81, 0.62);
+    this.add.rectangle(playCx, playBottom - obH / 2, playWidth, obH, 0x4d3c81, 0.62);
+    this.add.text(playLeft + 40, playTop + obH / 2, "OB", { color: "#f1c8ff", fontFamily: "Trebuchet MS", fontSize: "14px" }).setOrigin(0.5);
+    this.add.text(playLeft + 40, playBottom - obH / 2, "OB", { color: "#f1c8ff", fontFamily: "Trebuchet MS", fontSize: "14px" }).setOrigin(0.5);
     this.drawWindZones();
 
-    for (const [x, y] of [
-      [88, 238],
-      [295, 304],
-      [112, 515],
-      [270, 570],
-    ]) {
+    for (const [wx, wy] of [[280, 90], [550, 288], [430, 74], [720, 274]]) {
+      const { x, y } = this.worldToScreen({ x: wx, y: wy });
       this.add.rectangle(x, y, 50, 34, 0x7b7c78);
       this.add.rectangle(x + 8, y - 26, 34, 42, 0x65645e);
     }
 
-    for (const [x, y, color] of [
-      [72, 420, 0xd14f41],
-      [316, 454, 0xf2e7b8],
-      [102, 642, 0xd14f41],
-      [302, 185, 0xf2e7b8],
-    ]) {
+    for (const [wx, wy, color] of [[200, 270, 0xd14f41], [650, 90, 0xf2e7b8], [350, 74, 0xd14f41], [750, 274, 0xf2e7b8]]) {
+      const { x, y } = this.worldToScreen({ x: wx, y: wy });
       this.add.circle(x, y, 13, color);
       this.add.rectangle(x, y + 13, 9, 18, 0xe7d7ad);
     }
 
-    for (const [x, y] of [
-      [78, 720],
-      [318, 682],
-      [145, 210],
-    ]) {
+    for (const [wx, wy] of [[180, 84], [330, 282], [490, 78]]) {
+      const { x, y } = this.worldToScreen({ x: wx, y: wy });
       this.add.ellipse(x, y, 34, 9, 0xe9e0c9);
       this.add.circle(x - 14, y - 4, 6, 0xe9e0c9);
     }
 
     const basket = this.worldToScreen(gameSession.hole.basket);
     this.add
-      .text(COURSE_CENTER_X, 86, "FLIGHT: DISC PATH", {
+      .text(playLeft + 80, playTop + 30, "FLIGHT: DISC PATH", {
         color: "#f6f0d2",
         fontFamily: "Trebuchet MS",
         fontSize: "15px",
@@ -267,9 +325,9 @@ export class HoleScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.drawBasketTarget(basket.x, basket.y);
-    this.add.circle(basket.x, basket.y, 9, 0xf6f0d2); // center dot accent for flight view
+    this.add.circle(basket.x, basket.y, 9, 0xf6f0d2);
     this.lieMarker = this.add.circle(0, 0, 13, 0xe2d36c, 0.45).setStrokeStyle(4, 0xf6f0d2);
-    this.aimLine = this.add.line(0, 0, 195, 734, 195, 438, 0xe2d36c, 0.85).setLineWidth(5).setVisible(false);
+    this.aimLine = this.add.line(0, 0, playLeft + 100, cy, this.layout.playRight - 100, cy, 0xe2d36c, 0.85).setLineWidth(5).setVisible(false);
     this.updateLieMarker();
   }
 
@@ -279,7 +337,7 @@ export class HoleScene extends Phaser.Scene {
       fontFamily: "Trebuchet MS",
       fontSize: "12px",
       lineSpacing: 4,
-      wordWrap: { width: 354 },
+      wordWrap: { width: 700 },
     });
   }
 
@@ -297,6 +355,7 @@ export class HoleScene extends Phaser.Scene {
     this.overlay.replaceChildren();
     this.overlay.className = `hole-controls hole-controls--${this.mode}`;
     this.overlay.classList.toggle("is-locked", this.controlsLocked);
+    this.overlay.dataset.distanceFt = `${Math.round(gameSession.distanceToBasket)}`;
 
     if (this.mode === "putting") {
       this.renderPuttingControls();
@@ -306,7 +365,7 @@ export class HoleScene extends Phaser.Scene {
     if (this.mode === "flight") {
       this.addStatusPanel("Disc in flight", this.status);
       const controls = this.createElement("div", "button-grid single-action");
-      this.addButton("Throw disc", () => this.throwDisc(), controls, "primary-action", false);
+      this.addButton("Watch the flight…", () => {}, controls, "primary-action", true);
       this.overlay.append(controls);
       return;
     }
@@ -554,28 +613,8 @@ export class HoleScene extends Phaser.Scene {
     parent.append(button);
   }
 
-  private handleOverlayPowerDrag(event: PointerEvent) {
-    if (
-      this.mode !== "setup" ||
-      this.controlsLocked ||
-      event.clientY < POWER_ZONE_Y ||
-      event.target instanceof HTMLButtonElement ||
-      (event.target instanceof HTMLElement && Boolean(event.target.closest(".power-pad")))
-    ) {
-      return;
-    }
-
-    if (event.type === "pointerdown") {
-      this.overlay.setPointerCapture(event.pointerId);
-    } else if (!this.overlay.hasPointerCapture(event.pointerId)) {
-      return;
-    }
-
-    event.preventDefault();
-    this.power = Phaser.Math.Clamp((CANVAS_BOTTOM_Y - event.clientY) / POWER_DRAG_RANGE, 0.25, 1);
-    this.updateAimLine();
-    this.updateHud();
-    this.updateDragReadouts();
+  private handleOverlayPowerDrag(_event: PointerEvent) {
+    // Power is set via the DOM power-pad control; canvas overlay drag is not used in landscape.
   }
 
   private handleDrag(pointer: Phaser.Input.Pointer) {
@@ -585,8 +624,8 @@ export class HoleScene extends Phaser.Scene {
 
     if (this.mode === "putting") {
       this.puttOffset = {
-        x: Phaser.Math.Clamp(pointer.x - PUTT_BASKET.x, -88, 88),
-        y: Phaser.Math.Clamp(pointer.y - PUTT_BASKET.y, -82, 82),
+        x: Phaser.Math.Clamp(pointer.x - this.layout.puttBasket.x, -88, 88),
+        y: Phaser.Math.Clamp(pointer.y - this.layout.puttBasket.y, -82, 82),
       };
       this.drawCrosshair();
       this.updateHud();
@@ -597,11 +636,11 @@ export class HoleScene extends Phaser.Scene {
       return;
     }
 
-    if (pointer.y < POWER_ZONE_Y && pointer.y > AIM_DRAG_TOP) {
-      const dx = pointer.x - 195;
-      this.aimOffsetDegrees = Phaser.Math.Clamp(dx / 4, -42, 42);
-    } else if (pointer.y >= POWER_ZONE_Y) {
-      this.power = Phaser.Math.Clamp((CANVAS_BOTTOM_Y - pointer.y) / POWER_DRAG_RANGE, 0.25, 1);
+    // In landscape the hole runs horizontally; aim offset is controlled by vertical drag.
+    const { playLeft, playRight, playTop, playBottom, cy } = this.layout;
+    if (pointer.x > playLeft && pointer.x < playRight - 50 && pointer.y > playTop && pointer.y < playBottom) {
+      const dy = pointer.y - cy;
+      this.aimOffsetDegrees = Phaser.Math.Clamp(dy / 4, -42, 42);
     }
     this.updateAimLine();
     this.updateHud();
@@ -676,7 +715,9 @@ export class HoleScene extends Phaser.Scene {
       ? "Tap-in range. One stroke added automatically."
       : result.made
         ? "Chains caught it."
-        : "Missed putt. Reset aim and try again.";
+        : result.missReason
+          ? `Missed: ${result.missReason}. Reset aim and try again.`
+          : "Missed putt. Reset aim and try again.";
     if (this.mode === "putting") {
       this.children.removeAll(true);
       this.drawPuttingView();
@@ -777,10 +818,11 @@ export class HoleScene extends Phaser.Scene {
     this.aimTarget?.setVisible(false);
     this.aimLabel?.setVisible(!forecast.reliefLikely);
     if (!forecast.reliefLikely) {
-      const labelOffsetX = this.aimOffsetDegrees >= 0 ? 48 : -48;
+      const labelOffsetY = this.aimOffsetDegrees >= 0 ? 48 : -48;
+      const { playLeft, playRight, playTop, playBottom } = this.layout;
       this.aimLabel?.setPosition(
-        Phaser.Math.Clamp(labelPoint.x + labelOffsetX, 86, 282),
-        Phaser.Math.Clamp(labelPoint.y, 200, 488),
+        Phaser.Math.Clamp(labelPoint.x, playLeft + 60, playRight - 60),
+        Phaser.Math.Clamp(labelPoint.y + labelOffsetY, playTop + 30, playBottom - 30),
       );
       this.aimLabel?.setText(this.previewLandingLabel(forecast));
     }
@@ -812,19 +854,26 @@ export class HoleScene extends Phaser.Scene {
     this.crosshairLines = [];
     this.puttGuide?.destroy();
 
-    this.add.rectangle(195, 422, 390, 844, 0x172419);
-    this.add.rectangle(195, 640, 390, 118, 0x45612f);
-    this.add.rectangle(195, 705, 390, 70, 0x25371f);
-    this.add.rectangle(195, 325, 310, 390, 0xf6f0d2, 0.04).setStrokeStyle(2, 0xd8c66a, 0.28);
-    this.add.circle(72, 184, 36, 0x5b3f8f, 0.45);
-    this.add.circle(318, 128, 28, 0x6a8732, 0.7);
+    const { cx, cy, playLeft, playTop } = this.layout;
+    const PB = this.layout.puttBasket;
+    const PT = this.layout.puttTee;
+    const W = this.scale.width, H = this.scale.height;
 
-    this.add.rectangle(PUTT_BASKET.x, PUTT_BASKET.y + 88, 8, 178, 0xd8c66a);
-    this.add.ellipse(PUTT_BASKET.x, PUTT_BASKET.y + 180, 96, 16, 0x11140f, 0.55);
-    this.add.ellipse(PUTT_BASKET.x, PUTT_BASKET.y - 20, 118, 36, 0xd8c66a, 0.18).setStrokeStyle(4, 0xd8c66a);
-    this.add.rectangle(PUTT_BASKET.x, PUTT_BASKET.y + 34, 86, 92, 0x10150f, 0.28).setStrokeStyle(3, 0xd8c66a);
+    this.add.rectangle(cx, cy, W, H, 0x172419);
+    // Landscape green: center horizontal strip
+    this.add.rectangle(cx - 150, cy, W - 300, 220, 0x45612f);
+    this.add.rectangle(cx - 150, cy + 80, W - 300, 80, 0x25371f);
+    this.add.rectangle(cx - 150, cy, W - 300, H - 120, 0xf6f0d2, 0.04).setStrokeStyle(2, 0xd8c66a, 0.28);
+    this.add.circle(playLeft + 50, playTop + 60, 36, 0x5b3f8f, 0.45);
+    this.add.circle(playLeft + 200, playTop + 40, 28, 0x6a8732, 0.7);
+
+    // Basket structure
+    this.add.rectangle(PB.x, PB.y + 88, 8, 178, 0xd8c66a);
+    this.add.ellipse(PB.x, PB.y + 180, 96, 16, 0x11140f, 0.55);
+    this.add.ellipse(PB.x, PB.y - 20, 118, 36, 0xd8c66a, 0.18).setStrokeStyle(4, 0xd8c66a);
+    this.add.rectangle(PB.x, PB.y + 34, 86, 92, 0x10150f, 0.28).setStrokeStyle(3, 0xd8c66a);
     this.add
-      .text(PUTT_BASKET.x, PUTT_BASKET.y - 78, "BASKET / CHAINS", {
+      .text(PB.x, PB.y - 78, "BASKET / CHAINS", {
         color: "#10150f",
         fontFamily: "Trebuchet MS",
         fontSize: "12px",
@@ -835,14 +884,15 @@ export class HoleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     for (let index = 0; index < 6; index += 1) {
-      const x = PUTT_BASKET.x - 34 + index * 13.5;
-      this.add.line(0, 0, x, PUTT_BASKET.y - 8, x + 8, PUTT_BASKET.y + 76, 0xf6f0d2, 0.55).setLineWidth(2);
+      const x = PB.x - 34 + index * 13.5;
+      this.add.line(0, 0, x, PB.y - 8, x + 8, PB.y + 76, 0xf6f0d2, 0.55).setLineWidth(2);
     }
 
-    this.add.circle(PUTT_TEE.x, PUTT_TEE.y, 12, 0xe2d36c).setStrokeStyle(3, 0x1a1510);
-    this.add.rectangle(PUTT_TEE.x, PUTT_TEE.y + 26, 72, 12, 0xf6f0d2, 0.35);
+    // Tee marker
+    this.add.circle(PT.x, PT.y, 12, 0xe2d36c).setStrokeStyle(3, 0x1a1510);
+    this.add.rectangle(PT.x, PT.y + 26, 72, 12, 0xf6f0d2, 0.35);
     this.add
-      .text(104, PUTT_TEE.y - 20, "PUTT LIE / DISC", {
+      .text(PT.x, PT.y - 28, "PUTT LIE / DISC", {
         color: "#10150f",
         fontFamily: "Trebuchet MS",
         fontSize: "12px",
@@ -852,31 +902,52 @@ export class HoleScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    // Info text in upper-right of play area
+    const infoX = Math.round(W * 0.72);
     this.add
-      .text(195, 456, `${Math.round(gameSession.distanceToBasket)} ft putt`, {
+      .text(infoX, H * 0.22, `${Math.round(gameSession.distanceToBasket)} ft putt`, {
         color: "#f6f0d2",
         fontFamily: "Trebuchet MS",
         fontSize: "24px",
       })
       .setOrigin(0.5);
     this.add
-      .text(195, 490, `Wind drift ${gameSession.wind.strength} @ ${gameSession.wind.directionDegrees} deg`, {
+      .text(infoX, H * 0.33, `Wind drift ${gameSession.wind.strength} @ ${gameSession.wind.directionDegrees} deg`, {
         color: "#cfe4a4",
         fontFamily: "Trebuchet MS",
         fontSize: "16px",
       })
       .setOrigin(0.5);
-    this.add
-      .text(195, 512, "Drag crosshair on basket", {
-        color: "#f6f0d2",
+    const dragHint = this.add
+      .text(PB.x, PB.y + 130, "▶  Drag crosshair to aim  ◀", {
+        color: "#10150f",
         fontFamily: "Trebuchet MS",
-        fontSize: "15px",
+        fontSize: "14px",
+        fontStyle: "bold",
+        backgroundColor: "#e2d36c",
+        padding: { x: 8, y: 4 },
       })
       .setOrigin(0.5);
-    this.add.line(0, 0, 285, 512, 330, 512, 0xcfe4a4, 0.75).setLineWidth(3);
-    this.add.triangle(342, 512, 330, 504, 330, 520, 348, 512, 0xcfe4a4, 0.75);
+    this.tweens.add({
+      targets: dragHint,
+      alpha: { from: 1, to: 0.25 },
+      duration: 700,
+      repeat: 3,
+      yoyo: true,
+      ease: "Sine.easeInOut",
+    });
 
     this.drawCrosshair();
+    const pulseRing = this.add.circle(PB.x, PB.y, 20, 0xe2d36c, 0).setStrokeStyle(3, 0xe2d36c, 0.9);
+    this.tweens.add({
+      targets: pulseRing,
+      scaleX: 2.4,
+      scaleY: 2.4,
+      alpha: 0,
+      duration: 1100,
+      repeat: 2,
+      ease: "Sine.easeOut",
+    });
   }
 
   private drawFlightPath(result: ShotResult) {
@@ -915,8 +986,9 @@ export class HoleScene extends Phaser.Scene {
     this.flightPath.fillStyle(0xf6f0d2, 0.9);
     this.flightPath.fillCircle(start.x, start.y, 7);
     this.flightPath.fillCircle(landing.x, landing.y, 7);
+    const { playTop, playBottom } = this.layout;
     this.add
-      .text(start.x, Math.min(start.y + 28, 560), "THROW START", {
+      .text(start.x, Math.min(start.y + 28, playBottom - 30), "THROW START", {
         color: "#10150f",
         fontFamily: "Trebuchet MS",
         fontSize: "11px",
@@ -926,7 +998,7 @@ export class HoleScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.add
-      .text(landing.x, Math.max(landing.y - 24, 118), result.reliefApplied ? "OB LANDING" : "LANDING", {
+      .text(landing.x, Math.max(landing.y - 24, playTop + 30), result.reliefApplied ? "OB LANDING" : "LANDING", {
         color: "#10150f",
         fontFamily: "Trebuchet MS",
         fontSize: "11px",
@@ -948,7 +1020,7 @@ export class HoleScene extends Phaser.Scene {
       this.flightPath.fillStyle(0xe2d36c, 0.9);
       this.flightPath.fillCircle(relief.x, relief.y, 6);
       this.add
-        .text(relief.x, Math.min(relief.y + 28, 560), "RELIEF LIE", {
+        .text(relief.x, Math.min(relief.y + 28, playBottom - 30), "RELIEF LIE", {
           color: "#10150f",
           fontFamily: "Trebuchet MS",
           fontSize: "11px",
@@ -1022,12 +1094,14 @@ export class HoleScene extends Phaser.Scene {
     this.crosshairLines = [];
     this.puttGuide?.destroy();
 
-    const x = PUTT_BASKET.x + this.puttOffset.x;
-    const y = PUTT_BASKET.y + this.puttOffset.y;
+    const PB = this.layout.puttBasket;
+    const PT = this.layout.puttTee;
+    const x = PB.x + this.puttOffset.x;
+    const y = PB.y + this.puttOffset.y;
     this.puttGuide = this.add.graphics();
     this.puttGuide.lineStyle(3, 0xf6f0d2, 0.5);
     this.puttGuide.beginPath();
-    this.puttGuide.moveTo(PUTT_TEE.x, PUTT_TEE.y);
+    this.puttGuide.moveTo(PT.x, PT.y);
     this.puttGuide.lineTo(x, y);
     this.puttGuide.strokePath();
 
@@ -1047,8 +1121,8 @@ export class HoleScene extends Phaser.Scene {
 
     if (distance > 470) {
       this.disc = "driver";
-      this.power = 0.78; // at 0.78 effectivePower equals controlledPower, keeping risk "Low - open lane"
-      this.aimOffsetDegrees = 6; // steer toward fairway center; tee and basket share x=120, center is at x=180
+      this.power = 0.78;
+      this.aimOffsetDegrees = 0;
       return;
     }
 
@@ -1161,12 +1235,30 @@ export class HoleScene extends Phaser.Scene {
     const zones = forecast.routeWindZones
       .map((id) => gameSession.hole.windZones?.find((zone) => zone.id === id)?.label)
       .filter((label): label is string => Boolean(label));
+    const effect = this.windEffectDescription(forecast);
 
     if (zones.length === 0) {
-      return `Open air ${strength}`;
+      return `Open air ${strength}${effect}`;
     }
 
-    return `${zones.join(" + ")} ${strength}`;
+    return `${zones.join(" + ")} ${strength}${effect}`;
+  }
+
+  private windEffectDescription(forecast: ShotForecast): string {
+    if (forecast.routeWindZones.includes("left-tailwind")) {
+      return " · longer carry";
+    }
+
+    if (forecast.routeWindZones.includes("right-crosswind")) {
+      return " · push across";
+    }
+
+    const wind = forecast.routeWind;
+    if (wind.strength < 0.5) {
+      return " · no effect";
+    }
+
+    return "";
   }
 
   private currentLieQualityLabel() {
@@ -1202,8 +1294,8 @@ export class HoleScene extends Phaser.Scene {
 
   private previewForecastZone(forecast: ShotForecast) {
     const center = this.worldToScreen(forecast.landingZone.center);
-    const scaleX = 294 / gameSession.hole.bounds.width;
-    const scaleY = 470 / gameSession.hole.bounds.height;
+    const scaleX = this.layout.playWidth / gameSession.hole.bounds.width;
+    const scaleY = this.layout.playHeight / gameSession.hole.bounds.height;
 
     return {
       center,
@@ -1228,9 +1320,12 @@ export class HoleScene extends Phaser.Scene {
   }
 
   private worldToScreen(point: Vector2) {
-    const x = 48 + ((point.x - gameSession.hole.bounds.x) / gameSession.hole.bounds.width) * 294;
-    const y = 92 + ((point.y - gameSession.hole.bounds.y) / gameSession.hole.bounds.height) * 470;
-    return { x, y };
+    const { playLeft, playTop, playWidth, playHeight } = this.layout;
+    const bounds = gameSession.hole.bounds;
+    return {
+      x: playLeft + ((point.x - bounds.x) / bounds.width) * playWidth,
+      y: playTop + ((point.y - bounds.y) / bounds.height) * playHeight,
+    };
   }
 
   private worldRectToScreen(rect: { x: number; y: number; width: number; height: number }) {

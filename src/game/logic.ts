@@ -87,11 +87,11 @@ export function calculateShotForecast(
   const fadePressure = Math.abs(shot.curve) * 0.18 + Math.abs(3 - disc.stability) * 2.2;
   const distancePressure = Math.max(40, shot.distance) / 100;
   const forwardRadius =
-    (10 + distancePressure * 6.5 + shot.effectivePower * 16 * (1 - control * 0.55) + windPressure * 4.5) *
+    (6 + distancePressure * 3.5 + shot.effectivePower * 16 * (1 - control * 0.55) + windPressure * 4.5) *
     lie.forecastMultiplier *
     (1 + powerPressure * 0.7);
   const lateralRadius =
-    (12 + distancePressure * 8 + (1 - control) * 32 + windPressure * 5.5 + fadePressure) *
+    (8 + distancePressure * 4.5 + (1 - control) * 32 + windPressure * 5.5 + fadePressure) *
     lie.forecastMultiplier *
     (1 + powerPressure * 0.55);
   const radius = Math.hypot(forwardRadius, lateralRadius);
@@ -192,21 +192,25 @@ export function getLieQuality(lie: Vector2, hole: HoleConfig): LieQuality {
     return "relief";
   }
 
-  const left = hole.bounds.x;
-  const right = hole.bounds.x + hole.bounds.width;
-  const centerX = hole.bounds.x + hole.bounds.width / 2;
-  const fairwayHalfWidth = hole.bounds.width * 0.28;
-  const edgeBuffer = hole.bounds.width * 0.16;
+  const top = hole.bounds.y;
+  const bottom = hole.bounds.y + hole.bounds.height;
+  const centerY = hole.bounds.y + hole.bounds.height / 2;
+  const fairwayHalfHeight = hole.bounds.height * 0.28;
+  const edgeBuffer = hole.bounds.height * 0.16;
 
   if (
-    isInZone(lie, centerX - 104, hole.bounds.y + 172, 72, 82) ||
-    isInZone(lie, centerX + 88, hole.bounds.y + 282, 88, 96) ||
-    isInZone(lie, centerX - 118, hole.bounds.y + 350, 72, 96)
+    isInZone(lie, hole.bounds.x + 172, centerY - 144, 90, 80) ||
+    isInZone(lie, hole.bounds.x + 352, centerY + 70, 100, 68) ||
+    isInZone(lie, hole.bounds.x + 552, centerY - 144, 90, 80)
   ) {
     return "scramble";
   }
 
-  if (Math.abs(lie.x - centerX) <= fairwayHalfWidth && lie.x > left + edgeBuffer && lie.x < right - edgeBuffer) {
+  if (
+    Math.abs(lie.y - centerY) <= fairwayHalfHeight &&
+    lie.y > top + edgeBuffer &&
+    lie.y < bottom - edgeBuffer
+  ) {
     return "fairway";
   }
 

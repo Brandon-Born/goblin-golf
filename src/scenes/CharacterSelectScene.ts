@@ -16,8 +16,10 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.clearOverlay();
     this.cameras.main.setBackgroundColor("#1c2a1d");
     this.drawBackdrop();
+    const W = this.scale.width, H = this.scale.height;
+    const cx = W / 2;
     this.add
-      .text(195, 48, "Choose Your Goblin", {
+      .text(cx, H * 0.07, "Choose Your Goblin", {
         color: "#f6f0d2",
         fontFamily: "Trebuchet MS",
         fontSize: "29px",
@@ -27,7 +29,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.add
-      .text(195, 78, "Different throws, same tiny tee pad", {
+      .text(cx, H * 0.14, "Different throws, same tiny tee pad", {
         color: "#dceab5",
         fontFamily: "Trebuchet MS",
         fontSize: "14px",
@@ -41,21 +43,30 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.clearOverlay();
   }
 
+  private tabConnectorContainer?: Phaser.GameObjects.Container;
+
   private renderCards() {
     this.cards.forEach((card) => card.destroy());
+    this.tabConnectorContainer?.destroy();
+    this.tabConnectorContainer = this.buildTabConnector();
+    const W = this.scale.width, H = this.scale.height;
+    const cx = W / 2, cy = H / 2;
+    const spacing = 380;
+    const cardY = cy - 20;
+
     this.cards = gameSession.characters.map((character, index) => {
-      const y = 146 + index * 172;
+      const x = cx + (index - 1) * spacing;
       const selected = character.id === this.selectedId;
-      const container = this.add.container(195, y);
+      const container = this.add.container(x, cardY);
       container.add(
         this.add
-          .rectangle(0, 0, 342, 154, selected ? 0x425b2a : 0x263721, 0.98)
+          .rectangle(0, 0, 354, 320, selected ? 0x425b2a : 0x263721, 0.98)
           .setStrokeStyle(selected ? 4 : 2, selected ? 0xe2d36c : 0x719159),
       );
-      container.add(this.add.rectangle(0, -68, 318, 9, selected ? 0xe2d36c : 0x6a8732, selected ? 0.92 : 0.54));
-      this.addGoblinPortrait(container, -130, -28, character.palette, selected);
+      container.add(this.add.rectangle(0, -156, 330, 9, selected ? 0xe2d36c : 0x6a8732, selected ? 0.92 : 0.54));
+      this.addGoblinPortrait(container, -130, -80, character.palette, selected);
       container.add(
-        this.add.text(-82, -54, character.name, {
+        this.add.text(-82, -128, character.name, {
           color: "#f6f0d2",
           fontFamily: "Trebuchet MS",
           fontSize: "19px",
@@ -63,7 +74,7 @@ export class CharacterSelectScene extends Phaser.Scene {
         }),
       );
       container.add(
-        this.add.text(-82, -25, character.playStyle, {
+        this.add.text(-82, -100, character.playStyle, {
           color: "#e2d36c",
           fontFamily: "Trebuchet MS",
           fontSize: "15px",
@@ -71,17 +82,17 @@ export class CharacterSelectScene extends Phaser.Scene {
         }),
       );
       container.add(
-        this.add.text(-82, -2, `"${character.quote}"`, {
+        this.add.text(-82, -74, `"${character.quote}"`, {
           color: "#dceab5",
           fontFamily: "Trebuchet MS",
           fontSize: "13px",
-          wordWrap: { width: 232 },
+          wordWrap: { width: 280 },
         }),
       );
       if (selected) {
         container.add(
           this.add
-            .text(139, -54, "LOCKED", {
+            .text(139, -128, "✓ SELECTED", {
               color: "#10150f",
               fontFamily: "Trebuchet MS",
               fontSize: "11px",
@@ -106,11 +117,11 @@ export class CharacterSelectScene extends Phaser.Scene {
       ["PUTT", character.stats.putting],
     ] as const;
     const positions = [
-      [-108, 38],
-      [0, 38],
-      [108, 38],
-      [-54, 63],
-      [54, 63],
+      [-108, 40],
+      [0, 40],
+      [108, 40],
+      [-54, 72],
+      [54, 72],
     ] as const;
 
     stats.forEach(([label, value], index) => {
@@ -190,13 +201,50 @@ export class CharacterSelectScene extends Phaser.Scene {
   }
 
   private drawBackdrop() {
-    this.add.rectangle(195, 422, 390, 844, 0x1c2a1d);
-    this.add.rectangle(195, 360, 330, 560, 0x233820, 0.5);
-    for (let y = 104; y <= 610; y += 34) {
-      this.add.rectangle(195, y, 310 - Math.abs(y - 350) * 0.1, 5, 0x6a8732, 0.28);
+    const W = this.scale.width, H = this.scale.height;
+    const cx = W / 2, cy = H / 2;
+    this.add.rectangle(cx, cy, W, H, 0x1c2a1d);
+    this.add.rectangle(cx, cy - 20, W - 80, 340, 0x233820, 0.5);
+    for (let x = 80; x <= W - 80; x += 34) {
+      this.add.rectangle(x, cy - 20, 5, 310 - Math.abs(x - cx) * 0.1, 0x6a8732, 0.28);
     }
-    this.add.circle(48, 136, 34, 0x5b3f8f, 0.34);
-    this.add.circle(340, 620, 48, 0xb85c38, 0.24);
+    this.add.circle(cx - 530, H * 0.2, 34, 0x5b3f8f, 0.34);
+    this.add.circle(cx + 480, H * 0.78, 48, 0xb85c38, 0.24);
+  }
+
+  private buildTabConnector(): Phaser.GameObjects.Container {
+    const W = this.scale.width, H = this.scale.height;
+    const cx = W / 2;
+    const spacing = 380;
+    const container = this.add.container(0, 0);
+    container.add(this.add.rectangle(cx, H * 0.83, W - 200, 2, 0x6a8732, 0.48));
+    container.add(
+      this.add
+        .text(cx, H * 0.86, "SELECT YOUR GOBLIN", {
+          color: "#dceab5",
+          fontFamily: "Trebuchet MS",
+          fontSize: "11px",
+          letterSpacing: 2,
+        })
+        .setOrigin(0.5),
+    );
+    for (let index = 0; index < gameSession.characters.length; index += 1) {
+      const x = cx + (index - 1) * spacing;
+      const character = gameSession.characters[index];
+      const selected = character.id === this.selectedId;
+      container.add(this.add.circle(x, H * 0.91, selected ? 7 : 4, selected ? 0xe2d36c : 0x6a8732, selected ? 0.95 : 0.55));
+      container.add(
+        this.add
+          .text(x, H * 0.94, character.name.split(" ")[0], {
+            color: selected ? "#e2d36c" : "#dceab5",
+            fontFamily: "Trebuchet MS",
+            fontSize: selected ? "13px" : "11px",
+            fontStyle: selected ? "bold" : "normal",
+          })
+          .setOrigin(0.5),
+      );
+    }
+    return container;
   }
 
   private addGoblinPortrait(

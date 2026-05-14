@@ -40,6 +40,7 @@ export interface PuttResult {
   autoTapIn: boolean;
   landing: Vector2;
   strokesAdded: number;
+  missReason?: string;
 }
 
 export class GameSession {
@@ -167,6 +168,19 @@ export class GameSession {
     const made = aimError + windDrift <= forgiveness && powerError <= 0.26;
     const progress = Phaser.Math.Clamp(input.power / idealPower, 0.2, 1.1);
 
+    let missReason: string | undefined;
+    if (!made) {
+      const powerDominant = powerError > 0.18;
+      const windDominant = windDrift > aimError * 0.5 && windDrift > 4;
+      if (powerDominant) {
+        missReason = input.power < idealPower ? "short on power" : "sailed long";
+      } else if (windDominant) {
+        missReason = "wind pushed it";
+      } else {
+        missReason = input.aimOffset.x > 4 ? "wide right" : input.aimOffset.x < -4 ? "wide left" : "off line";
+      }
+    }
+
     return {
       made,
       autoTapIn: false,
@@ -177,6 +191,7 @@ export class GameSession {
             y: this.holeState.lie.y + (HOLE_1.basket.y - this.holeState.lie.y) * progress,
           },
       strokesAdded: 1,
+      missReason,
     };
   }
 }
