@@ -59,8 +59,8 @@ These questions apply to the Hex Spiral and Runic Maw mechanics planned for futu
 - **Rule interaction at overlap:** If a route passes through both a Hex Spiral outer ring and a Runic Maw transition zone on the same shot, how are the forces composed? Additive vectors, dominant-force-wins, or sequential?
 - **OB vs. scramble for pit center lies:** Should a Runic Maw pit-center landing apply a penalty stroke + relief point (same as OB), or a scramble lie inside the pit with no penalty stroke but heavy control penalty? The OB mapping is simpler and maps cleanly to existing rules; the scramble-in-pit creates a more interesting recovery shot.
 
-## Mobile Format
+## Layout Format
 
-- Decided: design for mobile web first.
-- Decided: portrait orientation only for the first prototype.
+- Decided: design for a 1280x720 landscape browser viewport first.
+- Decided: mobile portrait is not a current target.
 - Decided: leave PWA installability for later.

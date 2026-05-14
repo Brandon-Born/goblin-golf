@@ -4,7 +4,7 @@ This plan turns the current design documentation into a practical build order fo
 
 ## Primary Goal
 
-Build a mobile-first Phaser prototype that proves the core experience:
+Build a landscape Phaser prototype that proves the core experience:
 
 - Title screen
 - Three-goblin character select
@@ -29,10 +29,10 @@ Use unit tests for:
 
 Use Playwright tests for:
 
-- Mobile portrait viewport rendering and canvas scaling
+- Landscape viewport rendering and canvas scaling
 - Title, character select, hole, putting, and score-summary flow
 - Touch or pointer interactions for aim, power, release-angle selection, disc selection, and putting
-- Visual and behavioral checks that important UI does not overlap unsafe areas or become unreadable on common phone sizes
+- Visual and behavioral checks that important UI does not overlap the playfield or become unreadable at the target viewport
 - Repeatable smoke coverage that proves the prototype can start, play through hole 1, and finish with a score
 
 Acceptance checks in every phase should be backed by automated tests wherever practical. Manual verification is still useful for feel, readability, and polish, but it should not replace automated coverage for core game behavior.
@@ -47,16 +47,16 @@ Deliverables:
 
 - Vite + TypeScript + Phaser project
 - Unit test setup
-- Playwright test setup with mobile portrait projects
-- Mobile-first canvas sizing
-- Portrait-oriented layout baseline
+- Playwright test setup with the target landscape project
+- Fixed 1280x720 canvas sizing with responsive fit
+- Landscape-oriented layout baseline
 - Boot, preload, title, character select, hole, and score scenes
 - Basic asset folder structure
 
 Acceptance checks:
 
 - App runs locally in a browser.
-- Canvas scales correctly at common mobile viewport sizes.
+- Canvas scales correctly in the target landscape viewport.
 - Scene transitions work from title to character select to hole.
 - Unit and Playwright test commands run successfully in CI-friendly mode.
 
@@ -73,10 +73,10 @@ Deliverables:
 
 Acceptance checks:
 
-- Start action is obvious on a phone screen.
+- Start action is obvious at the target viewport.
 - Text is readable without zooming.
 - Nothing important sits under browser UI or unsafe screen areas.
-- Playwright verifies the title screen and start transition at mobile viewport sizes.
+- Playwright verifies the title screen and start transition at the target viewport.
 
 ### Phase 3: Character Select
 
@@ -91,7 +91,7 @@ Deliverables:
 
 Acceptance checks:
 
-- Each character is readable on a narrow screen.
+- Each character is readable in the landscape card layout.
 - Selection clearly changes state.
 - Stats and play styles match [Characters](characters.md).
 - Unit tests validate character data, and Playwright verifies selection and confirm behavior.
@@ -113,7 +113,7 @@ Acceptance checks:
 
 - The player can understand the hole objective immediately.
 - OB and playable areas are visually distinct.
-- The camera modes support portrait play.
+- The camera modes support landscape play.
 - Playwright verifies HUD readability, safe-area layout, and initial hole scene rendering.
 
 ### Phase 5: Shot Model
@@ -196,7 +196,7 @@ Acceptance checks:
 
 - The prototype communicates the intended lighthearted tone.
 - The rules still feel serious and readable.
-- The hole can be completed smoothly in a short mobile session.
+- The hole can be completed smoothly in a short browser session.
 - Playwright smoke tests cover a complete hole-1 playthrough to the score screen.
 
 ## Suggested Folder Structure
@@ -221,7 +221,7 @@ src/
       shotModel.ts
       rules.ts
       wind.ts
-      mobileInput.ts
+      pointerInput.ts
     ui/
       controls.ts
       buttons.ts
@@ -248,7 +248,7 @@ These decisions have been made for the first implementation pass:
 - Use crosshair aim, deliberate power, distance-scaled wind, and auto tap-ins for putting.
 - Start with OB relief only, no drop zones.
 - Make hole 1 fantasy-themed with ruins, mushrooms, and scattered bones.
-- Support portrait orientation only.
+- Support the 1280x720 landscape viewport only.
 - Leave PWA installability and sound for later.
 
 ## Do Not Expand Scope Yet
@@ -261,4 +261,4 @@ Avoid adding these until the first hole is playable:
 - Shops or unlocks
 - Advanced disc inventories
 - Full PDGA edge-case simulation
-- Desktop-specific UI
+- Alternate mobile portrait layout

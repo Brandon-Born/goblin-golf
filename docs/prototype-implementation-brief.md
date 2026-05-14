@@ -32,7 +32,7 @@ Use the documented recommended stack:
 - TypeScript
 - Vite
 
-The prototype should stay mobile-first and portrait-only.
+The current prototype should stay focused on the 1280x720 landscape viewport.
 
 ## Testing
 
@@ -41,7 +41,7 @@ Automated testing is a high priority for the first implementation pass. Do not t
 Set up both test layers during the initial scaffold:
 
 - Unit tests for deterministic game logic
-- Playwright tests for mobile browser behavior
+- Playwright tests for browser-visible behavior in the landscape viewport
 
 Unit tests should cover the systems that decide gameplay outcomes:
 
@@ -51,7 +51,7 @@ Unit tests should cover the systems that decide gameplay outcomes:
 
 Playwright tests should cover the player-visible prototype flow:
 
-- Mobile portrait viewport rendering and canvas scaling
+- Landscape viewport rendering and canvas scaling
 - Title screen start flow
 - Character selection and confirmation
 - Hole scene HUD readability
@@ -142,7 +142,7 @@ Use the documented hybrid camera model:
 - Top-down view for long disc flight
 - Basket-focused view for putting
 
-All camera modes must support portrait phone play first.
+All camera modes must support the 1280x720 landscape play space first.
 
 ## Deferred
 
@@ -156,7 +156,7 @@ Leave these out of the first implementation pass:
 - Shops or unlocks
 - Advanced disc inventories
 - Full PDGA edge-case simulation
-- Landscape support
+- Alternate mobile portrait layout
 
 ## Next Implementation Step
 

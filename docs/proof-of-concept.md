@@ -2,7 +2,7 @@
 
 ## Objective
 
-Create a playable vertical slice for a mobile-first web-based Goblin Golf prototype. The goal is not a full game; it is a focused experience that proves the main flow and feel on a phone-sized touch screen.
+Create a playable vertical slice for a landscape web-based Goblin Golf prototype. The goal is not a full game; it is a focused experience that proves the main flow and feel in a 1280x720 browser viewport with pointer and touch-friendly controls.
 
 ## Included Screens
 
@@ -13,7 +13,7 @@ Purpose:
 - Establish the game name and playful fantasy sports tone.
 - Offer a clear start action.
 - Optionally show idle goblin animation, a basket, flying discs, or the first course background.
-- Fit naturally in portrait orientation.
+- Fit naturally in landscape orientation.
 
 Minimum actions:
 
@@ -32,7 +32,7 @@ Purpose:
 - Let the player choose between three goblins.
 - Preview each goblin's play style.
 - Make the selection feel expressive, not purely statistical.
-- Keep comparison readable on a narrow screen.
+- Keep comparison readable in the wide-screen card layout.
 
 Minimum content per goblin:
 
@@ -49,7 +49,7 @@ Purpose:
 - Demonstrate the main shot loop from tee to basket.
 - Show how power, direction, wind, disc selection, and release angle combine.
 - Trigger putting mode near the basket.
-- Make shot controls usable with touch input.
+- Make shot controls usable with mouse or touch input.
 
 Minimum elements:
 
@@ -62,7 +62,7 @@ Minimum elements:
 - Shot setup UI with deliberate aim, drag power, disc selection, and release angle controls
 - Stroke counter
 - Lie marker after each throw
-- Mobile-safe touch controls
+- Touch-friendly controls
 
 ### Putting Mini Game
 

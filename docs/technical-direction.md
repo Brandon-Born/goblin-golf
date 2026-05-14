@@ -12,7 +12,7 @@ Recommended baseline:
 - TypeScript for game logic and maintainability
 - Vite for local development and bundling
 - Canvas-based game scene with lightweight DOM only where it helps menus or accessibility
-- Mobile-first layout and touch-first input
+- Landscape-first layout with pointer and touch-friendly input
 
 ## Why Phaser Over Lower-Level Rendering
 
@@ -44,21 +44,21 @@ Use a hybrid camera model:
 
 This gives the shot setup a sports-game feel while keeping flight readable. The top-down view should prioritize landing position, hazards, wind influence, and the basket location.
 
-Camera framing should be designed for portrait mobile first. Each camera mode should reduce UI clutter and prioritize the current action over showing the entire hole at once.
+Camera framing should be designed for the 1280x720 landscape viewport first. Each camera mode should reduce UI clutter and prioritize the current action while keeping the right-side HUD clear of the playfield.
 
-## Mobile Target
+## Viewport Target
 
-The first prototype should treat mobile web as the primary platform.
+The current prototype treats a landscape desktop browser viewport as the primary platform.
 
 Recommended assumptions:
 
-- Portrait orientation is the default.
-- Touch is the default input method.
-- Controls should use taps, holds, and drags.
-- Primary controls should be reachable near the lower half of the screen.
-- Game systems should avoid requiring precise cursor control.
+- 1280x720 landscape is the default.
+- Mouse and touch input should both work.
+- Controls should use clicks, taps, and drags.
+- Primary controls should live in the right-side HUD outside the playfield.
+- Game systems should avoid requiring precise cursor-only control.
 - Shot release and putting should avoid timing-based mechanics.
-- Performance should target mid-range phones, not only desktop browsers.
+- Performance should stay lightweight enough for modest browser hardware.
 
 ## Physics Direction
 

@@ -156,7 +156,7 @@ async function expectManualPuttingDistance(page: Page) {
     .toBeGreaterThan(0);
 }
 
-test("mobile player flow reaches the score summary with fresh scene controls", async ({ page }) => {
+test("landscape player flow reaches the score summary with fresh scene controls", async ({ page }) => {
   await startHole(page);
   await expectSetupStateReadouts(page);
   await enterManualPutting(page);

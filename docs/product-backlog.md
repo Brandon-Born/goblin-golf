@@ -414,11 +414,11 @@ Suggested next step:
 
 These are not all defects. They are known follow-up tasks from documentation, playtests, and implementation gaps.
 
-### Mobile HUD And Readability
+### Landscape HUD And Readability
 
-- Move or collapse the overlay so the bottom half of the canvas (y=500–750) is fully visible during shot setup.
-- Fix aim readout truncation: allow wrap or use abbreviated format (`6° R`).
-- Add responsive layout checks for at least one narrow mobile viewport and one desktop viewport.
+- Keep the right-side overlay outside the active playfield during shot setup.
+- Keep compact aim readouts readable with abbreviated format (`6° R`).
+- Add responsive layout checks for the target 1280x720 viewport and any future alternate viewport before enabling that target.
 - Add Playwright visual assertions or screenshot review steps for label clipping and HUD overlap.
 
 ### Forecast, Labels, And Route Reading

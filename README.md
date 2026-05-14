@@ -15,7 +15,7 @@ The visual style should use polished pixel art that pays homage to classic 16-bi
 - [Art Direction](docs/art-direction.md)
 - [Rules And Competition Direction](docs/rules-and-competition.md)
 - [Technical Direction](docs/technical-direction.md)
-- [Mobile-First Design](docs/mobile-first-design.md)
+- [Layout and UX Design](docs/mobile-first-design.md)
 - [Implementation Plan](docs/implementation-plan.md)
 - [Prototype Implementation Brief](docs/prototype-implementation-brief.md)
 - [Product Backlog](docs/product-backlog.md)
@@ -25,7 +25,7 @@ The visual style should use polished pixel art that pays homage to classic 16-bi
 
 Build a small playable slice that answers the most important question first: does choosing a goblin, shaping a disc golf throw, reacting to wind, and switching into a distinct putting mini game feel fun?
 
-The prototype should be designed mobile-first, with portrait phone screens and touch input treated as the primary experience.
+The current prototype targets a landscape desktop viewport at 1280x720, with pointer and touch input both supported.
 
 The first version should include:
 
