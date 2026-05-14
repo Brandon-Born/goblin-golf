@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Goblin Golf is a mobile-first browser disc golf game built with Vite, TypeScript, and Phaser. The current prototype is a playable vertical slice: title screen, character select, one fantasy disc golf hole, throw setup, flight resolution, OB relief, putting, scoring, and replay.
+Goblin Golf is a browser disc golf game built with Vite, TypeScript, and Phaser. The current prototype targets a **landscape desktop viewport (1280×720)** and is a playable vertical slice: title screen, character select, one fantasy disc golf hole, throw setup, flight resolution, OB relief, putting, scoring, and replay.
 
 The target feel is playful but strategic. The game should stay readable and approachable while still rewarding deliberate shot planning. It should not rely on timing-based release mechanics. Skill should come from reading the course, choosing a route, managing uncertainty, selecting discs, shaping release angle, and placing the disc for the next lie.
 
@@ -14,7 +14,7 @@ Read these first before making product or gameplay changes:
 - `docs/product-backlog.md` - current known issues, TODOs, and recently resolved problems.
 - `docs/game-design.md` - game fantasy and experience goals.
 - `docs/core-mechanics.md` - throw, putting, scoring, and rules direction.
-- `docs/mobile-first-design.md` - primary UX constraints.
+- `docs/mobile-first-design.md` - UX and layout constraints for the landscape prototype.
 - `docs/implementation-plan.md` - phased build order and acceptance checks.
 
 The backlog is the source of truth for known product work. If a playtest reveals a new issue, add it to `docs/product-backlog.md`.
@@ -59,7 +59,7 @@ Important design choices:
 
 - Keep gameplay rules outside Phaser scenes when practical. Prefer `src/game/logic.ts` and `src/game/GameSession.ts` for rule changes.
 - Keep Phaser scenes focused on rendering, input, animation, and DOM HUD coordination.
-- Preserve mobile portrait as the primary target.
+- Target a landscape desktop viewport (1280×720, `Scale.FIT + CENTER_BOTH`). Mobile portrait is not a current target.
 - Do not add timing-based throw mechanics unless product direction changes.
 - Use readable DOM HUD for dense information, but protect the playfield.
 - Add or update tests for rule changes and player-visible flow changes.
@@ -69,7 +69,6 @@ Important design choices:
 
 See `docs/product-backlog.md` for details. Current major issues include:
 
-- Mobile shot HUD obstructs too much of the playfield.
 - Forecast and course labels can overflow, clip, or overlap.
 - Default first shot can read as high risk.
 - Wind-lane language needs to explain what the lane does.

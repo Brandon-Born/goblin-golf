@@ -1,112 +1,109 @@
-# Mobile-First Design
+# Layout and UX Design
 
-Goblin Golf should be designed primarily for mobile web play. Desktop support can exist later, but the proof of concept should assume a phone-sized screen, touch input, short sessions, and limited attention.
+Goblin Golf's current prototype targets a **landscape desktop viewport (1280×720)**. The design should stay readable and approachable, with controls that work well for both mouse and touch input on a wide screen.
 
 ## Target Format
 
-Recommended default:
+Current prototype defaults:
 
-- Portrait orientation only for the first prototype
-- One-handed friendly controls where possible
-- Touch-first interaction
+- Landscape orientation, 1280×720 canvas (`Scale.FIT + CENTER_BOTH`)
+- Touch-friendly controls where possible (touch events supported, `hasTouch: true` in tests)
 - Large readable UI elements
 - Short session length
 - Fast load time
 
-The game can support landscape later if it improves shot readability, but the first implementation should not add landscape-specific layout work.
+## Layout Strategy
+
+All scenes derive positions from `this.scale.width / this.scale.height` rather than hardcoded pixel values. `HoleScene` exposes a `Layout` object built in `create()` that defines:
+
+- `playLeft`, `playRight`, `playTop`, `playBottom`, `playWidth`, `playHeight` — the active play area margins
+- `cx`, `cy` — canvas center
+- `fairwayH` — fairway corridor height
+- `puttBasket` — putting view basket position
+
+`worldToScreen()` uses this layout to project hole-data coordinates into canvas pixels. All course rendering flows through it.
 
 ## Screen Priorities
 
-Mobile screens have limited space, so each mode should show only what the player needs right now.
+Each mode shows only what the player needs right now.
 
 ### Shot Setup
 
 Primary information:
 
-- Goblin and lie position
-- Basket direction
-- Aim line or projected arc
+- Lie position and quality
+- Basket direction and distance
+- Aim indicator and forecast zone
 - Wind indicator
-- Selected disc
-- Release angle
+- Selected disc and release angle
 - Power control
 
 Secondary information:
 
 - Stroke count
 - Hole par
-- Distance to basket
+
+The right-panel HUD (`.hole-controls`) is DOM-based and positioned outside the play area (`right: 180px, width: 280px`). It does not overlap the fairway.
 
 ### Disc Flight
 
 Primary information:
 
-- Disc position
+- Disc position and arc
 - Landing area
 - Basket direction
 - Wind effect
 
-The UI should pull back during disc flight so the player can read the result.
+The UI pulls back during flight so the player can read the result.
 
 ### Putting
 
 Primary information:
 
 - Basket
-- Crosshair aim
-- Power control
+- Crosshair aim (drag to set angle)
 - Distance-scaled wind drift
 
-Putting should avoid dense controls. The mini game should feel focused and readable on a small screen.
+Putting is a focused mini-game. The putting view uses a fixed viewport (`puttBasket` centered at ~53% × 37% of canvas) so the basket is always readable.
 
-## Touch Controls
+## Input Controls
 
-Controls should be designed around taps, holds, and drags.
+Controls are designed around drag interactions. Mouse and touch are both supported.
 
-Recommended control language:
+### Shot setup
 
-- Drag to aim
-- Tap to cycle disc
-- Tap to cycle release angle
-- Drag to set shot power
-- Drag a crosshair to aim putts
-- Set putt power deliberately
+- **Aim**: drag vertically on the canvas — `dy` from course-center Y controls aim offset (±42° clamp)
+- **Power**: drag the power pad (DOM element, right panel) — vertical drag, bottom = max power
+- **Disc / release angle**: tap buttons in the right panel to cycle
 
-Avoid tiny buttons, hover-only behavior, and inputs that require precise cursor control.
+### Putting
+
+- **Aim**: drag the crosshair (touch/mouse) to set putt angle
+- **Power**: release-putt button triggers the shot
+
+### Aim axis note
+
+The hole corridor runs left→right (tee at x≈160, basket at x≈880 in world space). The **perpendicular aim axis is Y**. Dragging the canvas downward (increasing Y) aims the disc toward the south/right; dragging upward aims toward north/left. The base aim is computed from `atan2(basket − lie)` so it always points down-course regardless of lie position.
 
 ## UI Sizing
 
-Use large targets and clear spacing.
-
-Guidelines:
-
-- Important touch targets should be at least 44 by 44 CSS pixels.
-- Primary controls should sit near the lower half of the screen.
-- Critical information should not sit under the player's thumb.
-- Text should be short and readable without zooming.
-- Avoid crowding the shot screen with persistent panels.
+- Important touch targets: at least 44×44 CSS pixels
+- Primary controls in the right panel, outside the fairway
+- Critical information (wind, distance, power) in the right panel, not overlapping the playfield
+- Text is short and readable at 1280×720
 
 ## Performance
 
-The prototype should run smoothly on mid-range mobile devices.
-
 Guidelines:
 
-- Prefer a fixed internal game resolution with responsive scaling.
-- Keep particle effects modest.
-- Limit full-screen transparency layers.
-- Compress image assets.
-- Avoid expensive physics calculations.
-- Keep the first playable hole small and asset-light.
+- Fixed internal resolution (1280×720) with responsive scaling via `Scale.FIT`
+- Modest decorative geometry (Phaser primitives, no external image assets)
+- No expensive per-frame physics calculations — shots resolve in a single deterministic pass
+- Keep the first playable hole small and asset-light
 
 ## Accessibility
 
-The mobile version should support simple, forgiving input.
-
-Guidelines:
-
-- Do not require fast repeated tapping.
-- Do not require timing windows for shot release or putting.
-- Make wind and shot angle visible, not just numeric.
-- Use icons with text labels for core controls until players learn them.
-- Avoid color-only communication for shot quality, disc type, or warnings.
+- No timing windows for shot release or putting
+- Wind and shot angle are visible on screen, not just numeric
+- Aim, disc, and angle controls are labeled buttons
+- Avoid color-only communication for shot quality or warnings

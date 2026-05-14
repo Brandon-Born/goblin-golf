@@ -27,7 +27,7 @@ Run a single e2e test:
 npx playwright test tests/e2e/prototype-flow.spec.ts
 ```
 
-E2E tests run against a mobile Chrome viewport (Pixel 5, 393×851, touch). Visual screenshots land in `test-results/visual-audit/`.
+E2E tests run against a desktop Chrome viewport (1280×720, touch enabled). Visual screenshots land in `test-results/visual-audit/`.
 
 ## Architecture
 
