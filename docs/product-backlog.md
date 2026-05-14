@@ -31,6 +31,7 @@ Evidence:
 - `test-results/qa-playtest/07-after-ob-relief.png` (QA lead screenshot, 2026-05-14)
 - `/private/tmp/goblin-golf-tester-a/06-lie-2.png` (Tester A, 2026-05-14)
 - `test-results/tester-b-2026-05-14/08-after-ob-relief.png` (Tester B, 2026-05-14)
+- `test-results/verify-complete/06-after-ob-relief.png` and `test-results/visual-audit/04-hyzer-flight-path.png` (verification, 2026-05-14): basket ring is clear, but the `BASKET TARGET` label still reaches underneath the HUD edge.
 
 Impact:
 
@@ -39,7 +40,7 @@ Impact:
 
 Suggested next step:
 
-- Reserve a true right-side UI gutter outside `HoleScene`'s projected playfield, or shrink/shift `playRight` so course labels and basket targets cannot render underneath `.hole-controls`.
+- Reserve a true right-side UI gutter outside `HoleScene`'s projected playfield, shrink/shift `playRight`, or clamp/offset course labels so their full bounding boxes cannot render underneath `.hole-controls`.
 - Add a visual audit assertion or screenshot review case for late-hole approach and OB relief states.
 
 ### Aim Readout Truncates With Ellipsis
@@ -373,6 +374,28 @@ Suggested next step:
 - Replace waits for `Disc in flight` text disappearance with a stronger scene-state or button-state poll.
 - Consider reducing worker count for animation-heavy e2e tests or increasing timeout only around known transition waits.
 
+### Missed-Putt E2E Test Expects Old Manual-Putt State
+
+Status: Open
+
+The tap-in-after-miss gameplay behavior now advances to the score screen, but `tests/e2e/prototype-flow.spec.ts` still expects a hole-scene `.status-panel` after clicking `Release putt` on a missed putt. This makes the documented `npm run test:e2e:server` verification fail even though the player-facing tap-in issue is fixed.
+
+Evidence:
+
+- `npm run test:e2e:server` failed on 2026-05-14: `missed putt returns a specific miss reason in the status panel`.
+- `npx playwright test tests/e2e/prototype-flow.spec.ts -g "missed putt" --project=desktop-chrome` failed in isolation with the same stale expectation.
+- Playwright error snapshot shows the page has advanced to the score scene with `Play again` visible.
+
+Impact:
+
+- The standard verification command reports a real red test.
+- Future fixes may be blocked or mistrusted because the suite no longer matches intended behavior.
+
+Suggested next step:
+
+- Update the missed-putt e2e test to expect score-summary completion when the miss lands inside tap-in range.
+- Add a separate test for non-tap-in missed putts if specific miss-reason status feedback still needs coverage.
+
 ### Score Screen Flavor Label Looks Like A Button
 
 Status: Resolved
@@ -420,13 +443,14 @@ Suggested next step:
 
 ### Score Screen Backdrop Props Bleed Behind Card Border
 
-Status: Resolved
+Status: Open
 
 Two decorative disc ellipses used as backdrop decoration are partially visible below the score card border, appearing as colored blobs behind the card's bottom edge. The layering makes the card bottom look unfinished.
 
 Evidence:
 
 - `12-after-putt.png` (agent visual audit, 2026-05-13)
+- `test-results/verify-complete/07-tapin-after-miss-score.png` and `test-results/visual-audit/06-score-summary.png` (verification, 2026-05-14): decorative disc ellipses are still partially visible below the score card and behind the `Play again` area.
 
 Suggested next step:
 

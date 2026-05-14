@@ -138,8 +138,9 @@ export class HoleScene extends Phaser.Scene {
     this.add.circle(lie.x, lie.y, 11, 0xf6f0d2).setStrokeStyle(3, gameSession.selectedCharacter.palette);
     this.add.circle(lie.x - 22, lie.y + 18, 14, gameSession.selectedCharacter.palette).setStrokeStyle(3, 0x10150f);
     const lieLabelY = lie.y > cy ? lie.y - 58 : lie.y + 46;
+    const lieLabelX = Math.min(lie.x, this.layout.playRight - 72);
     this.add
-      .text(lie.x, lieLabelY, "CURRENT LIE / DISC", {
+      .text(lieLabelX, lieLabelY, "CURRENT LIE / DISC", {
         color: "#10150f",
         fontFamily: "Trebuchet MS",
         fontSize: "12px",
@@ -174,8 +175,10 @@ export class HoleScene extends Phaser.Scene {
   private drawBasketTarget(x: number, y: number) {
     this.add.circle(x, y, 44, 0xe2d36c, 0.14).setStrokeStyle(4, 0xe2d36c, 0.68);
     this.add.circle(x, y, 28, 0x10150f, 0.6).setStrokeStyle(4, 0xd8c66a);
+    // Clamp label so its right edge stays clear of the HUD panel
+    const labelX = Math.min(x, this.layout.playRight - 60);
     this.add
-      .text(x, y - 54, "BASKET TARGET", {
+      .text(labelX, y - 54, "BASKET TARGET", {
         color: "#10150f",
         fontFamily: "Trebuchet MS",
         fontSize: "12px",
