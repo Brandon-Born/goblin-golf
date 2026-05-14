@@ -30,7 +30,7 @@ export class ScoreScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.add
       .text(cx, H * 0.22, gameSession.hole.name, {
-        color: "#e2d36c",
+        color: "#10150f",
         fontFamily: "Trebuchet MS",
         fontSize: "20px",
         fontStyle: "bold",
@@ -75,8 +75,8 @@ export class ScoreScene extends Phaser.Scene {
       this.add.rectangle(cx, y, 242, 8, 0x6a8732, 0.32);
     }
     this.add.rectangle(cx, H * 0.87, 338, 60, 0x786142, 0.74).setStrokeStyle(3, 0xaec76d, 0.62);
-    this.add.ellipse(cx - 114, H * 0.83, 46, 16, 0xf07b53, 0.92).setStrokeStyle(3, 0x10150f, 0.55);
-    this.add.ellipse(cx + 114, H * 0.83, 46, 16, 0xe2d36c, 0.92).setStrokeStyle(3, 0x10150f, 0.55);
+    this.add.ellipse(cx - 114, H * 0.875, 46, 16, 0xf07b53, 0.92).setStrokeStyle(3, 0x10150f, 0.55);
+    this.add.ellipse(cx + 114, H * 0.875, 46, 16, 0xe2d36c, 0.92).setStrokeStyle(3, 0x10150f, 0.55);
   }
 
   private drawScoreCard(strokes: number, headline: string) {
@@ -107,13 +107,12 @@ export class ScoreScene extends Phaser.Scene {
     this.addScoreRow(H * 0.63, "Strokes", String(strokes));
     this.addScoreRow(H * 0.69, "Par", String(gameSession.hole.par));
 
-    this.add.rectangle(cx, H * 0.77, 218, 42, 0x10150f, 0.42).setStrokeStyle(2, 0xaec76d, 0.66);
     this.add
       .text(cx, H * 0.77, strokes <= gameSession.hole.par ? "Clean finish" : "Try a tighter line", {
-        color: "#dceab5",
+        color: "#9aab6e",
         fontFamily: "Trebuchet MS",
-        fontSize: "16px",
-        fontStyle: "bold",
+        fontSize: "15px",
+        fontStyle: "italic",
       })
       .setOrigin(0.5);
   }

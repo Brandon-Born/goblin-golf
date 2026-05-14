@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { describeAngle, describeDisc, gameSession } from "../game/GameSession";
-import { distanceBetween } from "../game/logic";
+import { distanceBetween, isTapInAvailable } from "../game/logic";
 import type { DiscType, LieQuality, ReleaseAngle, ShotForecast, ShotInput, ShotResult, Vector2 } from "../game/types";
 
 type HoleMode = "setup" | "flight" | "putting";
@@ -59,13 +59,16 @@ export class HoleScene extends Phaser.Scene {
     const cy = height / 2;
     const playLeft = 48;
     const playTop = 60;
-    const playWidth = width - playLeft - 300;
+    // Mirror the CSS HUD position: right: max(16px, calc(50vw - 460px)), width: 280px
+    const hudRightMargin = Math.max(16, width / 2 - 460);
+    const playRight = width - hudRightMargin - 280 - 10;
+    const playWidth = playRight - playLeft;
     const playHeight = height - playTop * 2;
     const fairwayH = Math.round(playHeight * 0.34);
     return {
       cx, cy,
       playLeft, playTop,
-      playRight: playLeft + playWidth,
+      playRight,
       playBottom: playTop + playHeight,
       playWidth, playHeight,
       fairwayH,
@@ -638,7 +641,7 @@ export class HoleScene extends Phaser.Scene {
 
     // In landscape the hole runs horizontally; aim offset is controlled by vertical drag.
     const { playLeft, playRight, playTop, playBottom, cy } = this.layout;
-    if (pointer.x > playLeft && pointer.x < playRight - 50 && pointer.y > playTop && pointer.y < playBottom) {
+    if (pointer.x >= playLeft && pointer.x <= playRight - 50 && pointer.y >= playTop && pointer.y <= playBottom) {
       const dy = pointer.y - cy;
       this.aimOffsetDegrees = Phaser.Math.Clamp(dy / 4, -42, 42);
     }
@@ -716,8 +719,15 @@ export class HoleScene extends Phaser.Scene {
       : result.made
         ? "Chains caught it."
         : result.missReason
-          ? `Missed: ${result.missReason}. Reset aim and try again.`
-          : "Missed putt. Reset aim and try again.";
+          ? `Missed: ${result.missReason}.`
+          : "Missed putt.";
+
+    // Auto-complete if a missed putt leaves the disc inside tap-in range
+    if (!result.made && !gameSession.holeState.complete && isTapInAvailable(gameSession.holeState, gameSession.hole)) {
+      gameSession.putt({ aimOffset: { x: 0, y: 0 }, power: 0.5 });
+      this.status += " Tap-in — one more stroke added.";
+    }
+
     if (this.mode === "putting") {
       this.children.removeAll(true);
       this.drawPuttingView();

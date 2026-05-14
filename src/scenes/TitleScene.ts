@@ -108,10 +108,12 @@ export class TitleScene extends Phaser.Scene {
 
     this.add
       .text(cx + 120, cy - 78, "Tee box open", {
-        color: "#10150f",
+        color: "#f6f0d2",
         fontFamily: "Trebuchet MS",
-        fontSize: "18px",
+        fontSize: "16px",
         fontStyle: "bold",
+        stroke: "#10150f",
+        strokeThickness: 3,
       })
       .setOrigin(0.5);
   }

@@ -86,7 +86,7 @@ export class CharacterSelectScene extends Phaser.Scene {
           color: "#dceab5",
           fontFamily: "Trebuchet MS",
           fontSize: "13px",
-          wordWrap: { width: 280 },
+          wordWrap: { width: 245 },
         }),
       );
       if (selected) {
@@ -218,16 +218,6 @@ export class CharacterSelectScene extends Phaser.Scene {
     const spacing = 380;
     const container = this.add.container(0, 0);
     container.add(this.add.rectangle(cx, H * 0.83, W - 200, 2, 0x6a8732, 0.48));
-    container.add(
-      this.add
-        .text(cx, H * 0.86, "SELECT YOUR GOBLIN", {
-          color: "#dceab5",
-          fontFamily: "Trebuchet MS",
-          fontSize: "11px",
-          letterSpacing: 2,
-        })
-        .setOrigin(0.5),
-    );
     for (let index = 0; index < gameSession.characters.length; index += 1) {
       const x = cx + (index - 1) * spacing;
       const character = gameSession.characters[index];

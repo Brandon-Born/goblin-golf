@@ -19,6 +19,29 @@ The current prototype can complete the main flow:
 
 ## P1 - Major Usability Issues
 
+### Right-Side HUD Obscures Late-Hole Basket Target
+
+Status: Resolved
+
+In the landscape layout, the right-side DOM HUD overlaps the active playfield instead of sitting fully outside it. During late approach shots and OB relief recovery, the basket target ring, `BASKET TARGET` label, current lie label, and forecast/landing labels can sit underneath the control panel.
+
+Evidence:
+
+- `test-results/visual-audit/04-hyzer-flight-path.png` (QA playtest, 2026-05-14)
+- `test-results/qa-playtest/07-after-ob-relief.png` (QA lead screenshot, 2026-05-14)
+- `/private/tmp/goblin-golf-tester-a/06-lie-2.png` (Tester A, 2026-05-14)
+- `test-results/tester-b-2026-05-14/08-after-ob-relief.png` (Tester B, 2026-05-14)
+
+Impact:
+
+- Players lose sight of the basket and landing context exactly when they need to plan a scoring approach or recovery shot.
+- The current layout documentation says the right panel does not overlap the fairway, but the actual play area extends behind the HUD.
+
+Suggested next step:
+
+- Reserve a true right-side UI gutter outside `HoleScene`'s projected playfield, or shrink/shift `playRight` so course labels and basket targets cannot render underneath `.hole-controls`.
+- Add a visual audit assertion or screenshot review case for late-hole approach and OB relief states.
+
 ### Aim Readout Truncates With Ellipsis
 
 Status: Resolved
@@ -103,6 +126,26 @@ Suggested next step:
 - Consider a character-specific default that matches each goblin's play style (e.g. Morga starts more conservative, Skrak starts more aggressive).
 
 ## P2 - Gameplay And UX Improvements
+
+### Tap-In-Range Misses Stay In Manual Putting View
+
+Status: Resolved
+
+After a missed putt lands inside tap-in range, the game remains in the full manual putting view. The HUD can show a very short putt such as `Putt 4 ft`, but the visual putt lie is still drawn at the fixed putting tee location far from the basket, and the player must press `Release putt` again to complete the tap-in.
+
+Evidence:
+
+- `/private/tmp/goblin-golf-qa-c/putt-after-miss.png` (Tester C, 2026-05-14)
+
+Impact:
+
+- The design says very close putts should become automatic tap-ins.
+- A 4 ft putt still being presented as a full basket-focused challenge adds unnecessary friction and makes the visual lie distance look misleading.
+
+Suggested next step:
+
+- When a missed putt's resulting lie is inside `tapInRange`, automatically apply the tap-in or transition immediately to a clear tap-in resolution state.
+- If manual follow-up is intentional, scale the putting lie/basket geometry to represent the actual remaining distance.
 
 ### Selected Character Badge Reads As Locked Or Premium-Gated
 
@@ -249,9 +292,90 @@ Suggested next step:
 
 ## P3 - Polish And Technical Debt
 
-### Score Screen Flavor Label Looks Like A Button
+### Character Select Text Clips And Connector Label Hides Behind Buttons
+
+Status: Resolved
+
+On the landscape character select screen, Morga's quote can clip at the right edge of the card. The canvas connector label `SELECT YOUR GOBLIN` is also partially hidden behind the DOM tab buttons, leaving stray letters visible between controls.
+
+Evidence:
+
+- `test-results/tester-b-2026-05-14/02-character-select.png` (Tester B, 2026-05-14)
+- `test-results/tester-b-2026-05-14/03-character-skrak-selected.png` (Tester B, 2026-05-14)
+
+Impact:
+
+- The first interactive screen reads as unfinished because text and decorative guidance collide.
+- The clipped quote weakens character readability before the player chooses a goblin.
+
+Suggested next step:
+
+- Tighten card text wrapping or reduce quote width/font size so quotes fit inside all cards.
+- Move the canvas connector label above the DOM tab row, remove it, or render it as part of the DOM controls so layering is predictable.
+
+### Title Screen Tee Box Label Is Buried In The Art
+
+Status: Resolved
+
+The `Tee box open` label on the title screen is dark text drawn into the basket/fairway illustration. It blends into the green bar art and appears partially buried behind the course prop rather than intentionally placed.
+
+Evidence:
+
+- `test-results/tester-b-2026-05-14/01-title.png` (Tester B, 2026-05-14)
+
+Impact:
+
+- The first screen has a visible piece of text that reads like accidental layering.
+- It distracts from the title composition and weakens the first impression.
+
+Suggested next step:
+
+- Remove the label, move it clear of the basket illustration, or restyle it with stronger contrast and intentional placement.
+
+### Aim Drag Ignores Exact Playfield Border Pixels
+
+Status: Resolved
+
+Dragging exactly on the visible playfield border does not update aim because `HoleScene.handleDrag()` uses strict bounds checks. For example, after dragging to the top edge to set `42° L`, dragging to the bottom border at y=660 can leave the aim at `42° L`; dragging one pixel inside updates it to `42° R`.
+
+Evidence:
+
+- `/private/tmp/goblin-golf-qa-c/aim-at-bottom-border.png` (Tester C, 2026-05-14)
+
+Impact:
+
+- Players naturally drag to the edge to request maximum aim.
+- A dead border pixel can preserve the previous opposite extreme and set up the wrong throw.
+
+Suggested next step:
+
+- Use inclusive bounds for the playfield edge or clamp all pointer coordinates into the aimable playfield before calculating aim.
+
+### Parallel Playwright Runs Can Be Timing-Sensitive
 
 Status: Open
+
+During QA playtests, default parallel Playwright runs intermittently timed out around `Disc in flight` and putting transitions, while the same flows passed in isolation or with fewer workers. The QA lead's final full-suite run passed, so this appears timing-sensitive rather than deterministic.
+
+Evidence:
+
+- Tester A report, 2026-05-14: `npm run test:e2e:server` failed 3/12 under parallel load, isolated reruns passed.
+- Tester B report, 2026-05-14: default parallel run failed 4/12, `npx playwright test tests/e2e/prototype-flow.spec.ts --workers=1` passed.
+- QA lead rerun, 2026-05-14: `npx playwright test` passed 12/12.
+
+Impact:
+
+- The documented verification command may produce false red runs under load.
+- Timing flakes can hide real gameplay regressions.
+
+Suggested next step:
+
+- Replace waits for `Disc in flight` text disappearance with a stronger scene-state or button-state poll.
+- Consider reducing worker count for animation-heavy e2e tests or increasing timeout only around known transition waits.
+
+### Score Screen Flavor Label Looks Like A Button
+
+Status: Resolved
 
 The `Clean finish` result label on the score screen is rendered inside a dark card with a border, making it look like a tappable button. It is static flavor text. Players may tap it expecting to navigate forward, then be confused when nothing happens. The only real action is `Play again` at the bottom.
 
@@ -296,7 +420,7 @@ Suggested next step:
 
 ### Score Screen Backdrop Props Bleed Behind Card Border
 
-Status: Open
+Status: Resolved
 
 Two decorative disc ellipses used as backdrop decoration are partially visible below the score card border, appearing as colored blobs behind the card's bottom edge. The layering makes the card bottom look unfinished.
 
@@ -310,7 +434,7 @@ Suggested next step:
 
 ### Score Screen Hole Name Has Low Contrast Against Gold Circle
 
-Status: Open
+Status: Resolved
 
 The hole name `Ruincap Run` is drawn inside a gold-filled circle backdrop that sits below the `Round Complete` headline. The text color is low contrast against the gold fill at the scale rendered.
 
