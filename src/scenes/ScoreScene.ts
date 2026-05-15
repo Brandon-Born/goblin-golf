@@ -74,9 +74,10 @@ export class ScoreScene extends Phaser.Scene {
     for (let y = H * 0.32; y <= H * 0.82; y += 42) {
       this.add.rectangle(cx, y, 242, 8, 0x6a8732, 0.32);
     }
-    this.add.rectangle(cx, H * 0.87, 338, 60, 0x786142, 0.74).setStrokeStyle(3, 0xaec76d, 0.62);
-    this.add.ellipse(cx - 114, H * 0.875, 46, 16, 0xf07b53, 0.92).setStrokeStyle(3, 0x10150f, 0.55);
-    this.add.ellipse(cx + 114, H * 0.875, 46, 16, 0xe2d36c, 0.92).setStrokeStyle(3, 0x10150f, 0.55);
+    // Brown shelf and disc props sit below the score card (card bottom = cy+30+210 = H*0.833)
+    this.add.rectangle(cx, H * 0.905, 338, 60, 0x786142, 0.74).setStrokeStyle(3, 0xaec76d, 0.62);
+    this.add.ellipse(cx - 114, H * 0.895, 46, 16, 0xf07b53, 0.92).setStrokeStyle(3, 0x10150f, 0.55);
+    this.add.ellipse(cx + 114, H * 0.895, 46, 16, 0xe2d36c, 0.92).setStrokeStyle(3, 0x10150f, 0.55);
   }
 
   private drawScoreCard(strokes: number, headline: string) {

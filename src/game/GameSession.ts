@@ -181,14 +181,21 @@ export class GameSession {
       }
     }
 
+    // For a miss, cap progress so the disc can't overshoot into tap-in range.
+    // An accidental gimme after a bad-aim putt isn't a meaningful tap-in.
+    const maxSafeProgress = distance > HOLE_1.tapInRange
+      ? (distance - HOLE_1.tapInRange - 2) / distance
+      : 0.2;
+    const landingProgress = made ? progress : Math.min(progress, Math.max(0.2, maxSafeProgress));
+
     return {
       made,
       autoTapIn: false,
       landing: made
         ? { ...HOLE_1.basket }
         : {
-            x: this.holeState.lie.x + (HOLE_1.basket.x - this.holeState.lie.x) * progress,
-            y: this.holeState.lie.y + (HOLE_1.basket.y - this.holeState.lie.y) * progress,
+            x: this.holeState.lie.x + (HOLE_1.basket.x - this.holeState.lie.x) * landingProgress,
+            y: this.holeState.lie.y + (HOLE_1.basket.y - this.holeState.lie.y) * landingProgress,
           },
       strokesAdded: 1,
       missReason,
