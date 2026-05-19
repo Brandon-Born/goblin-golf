@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="56" height="20" viewBox="0 0 56 20">
+  <defs>
+    <linearGradient id="putterBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4e58a"/>
+      <stop offset="0.55" stop-color="#d8c66a"/>
+      <stop offset="1" stop-color="#7c6928"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="28" cy="13" rx="23" ry="5" fill="#000" opacity="0.34"/>
+  <ellipse cx="28" cy="10" rx="23" ry="8" fill="url(#putterBody)" stroke="#3a2f1f" stroke-width="1.8"/>
+  <ellipse cx="28" cy="7" rx="19" ry="5" fill="none" stroke="#3a2f1f" stroke-width="0.8" opacity="0.55"/>
+  <ellipse cx="28" cy="6" rx="17" ry="2.5" fill="#fffbe7" opacity="0.45"/>
+  <ellipse cx="21" cy="5" rx="8" ry="1.3" fill="#fff" opacity="0.65"/>
+</svg>

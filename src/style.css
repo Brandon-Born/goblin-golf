@@ -81,10 +81,29 @@ canvas {
 .control-card,
 .power-pad,
 .screen-state {
-  border: 2px solid rgba(216, 198, 106, 0.78);
-  border-radius: 6px;
-  background: var(--gg-panel);
-  box-shadow: 0 10px 24px var(--gg-shadow);
+  position: relative;
+  border: 2px solid rgba(216, 198, 106, 0.85);
+  border-radius: 8px;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(216, 198, 106, 0.1) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(36, 53, 31, 0.96) 0%, rgba(20, 32, 24, 0.96) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(246, 240, 210, 0.18),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.35),
+    0 6px 0 rgba(0, 0, 0, 0.35),
+    0 12px 28px var(--gg-shadow);
+}
+
+.status-panel::before,
+.screen-state::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 8px;
+  right: 8px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(216, 198, 106, 0.85), transparent);
+  pointer-events: none;
 }
 
 .status-panel {
@@ -255,31 +274,46 @@ button {
   min-height: 46px;
   padding: 0 12px;
   border: 2px solid var(--gg-gold);
-  border-radius: 6px;
-  background: linear-gradient(#2b4025, var(--gg-panel-strong));
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, #3c5630 0%, #2b4025 45%, var(--gg-panel-strong) 100%);
   box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.08),
-    0 5px 0 rgba(0, 0, 0, 0.2);
+    inset 0 2px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.4),
+    0 5px 0 rgba(0, 0, 0, 0.28),
+    0 8px 14px rgba(0, 0, 0, 0.32);
   color: var(--gg-cream);
   font: 800 14px/1.1 "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
-  letter-spacing: 0;
+  letter-spacing: 0.3px;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
   touch-action: manipulation;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
 
 button:active {
   background: var(--gg-panel-pressed);
-  box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.24);
-  transform: translateY(1px);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(0, 0, 0, 0.28);
+  transform: translateY(3px);
 }
 
 button.primary-action {
-  border-color: var(--gg-cream);
-  background: #6a8732;
+  border-color: #fff5cc;
+  background:
+    linear-gradient(180deg, #8aaf3f 0%, #6a8732 50%, #4f6622 100%);
   color: var(--gg-ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.32),
+    0 5px 0 rgba(40, 56, 14, 0.7),
+    0 8px 14px rgba(0, 0, 0, 0.32);
 }
 
 button:disabled {
-  opacity: 0.72;
+  opacity: 0.6;
+  filter: saturate(0.6);
 }
 
 .scene-overlay {
@@ -328,6 +362,141 @@ button:disabled {
 }
 
 /* Landscape is now the default layout; no breakpoint needed. */
+
+.dice-display {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 12px 10px 14px;
+  border: 2px solid rgba(216, 198, 106, 0.85);
+  border-radius: 10px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(120, 97, 66, 0.55) 0%, transparent 70%),
+    linear-gradient(180deg, rgba(58, 47, 31, 0.95) 0%, rgba(28, 23, 15, 0.95) 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(216, 198, 106, 0.2),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.4),
+    0 6px 0 rgba(0, 0, 0, 0.35),
+    0 12px 24px rgba(0, 0, 0, 0.4);
+}
+
+.die {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 3px solid var(--gg-gold);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.25) 0%, transparent 50%),
+    linear-gradient(160deg, #fdf6d8 0%, #efe1a0 60%, #b8a45a 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -3px 0 rgba(110, 88, 30, 0.5),
+    0 4px 0 rgba(0, 0, 0, 0.32),
+    0 6px 10px rgba(0, 0, 0, 0.3);
+  color: #2a1f0a;
+  cursor: pointer;
+  font-size: 24px;
+  font-weight: 900;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+  min-height: unset;
+  touch-action: manipulation;
+  transition: transform 0.08s ease, box-shadow 0.1s ease, filter 0.1s ease;
+}
+
+.die:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.die--selected {
+  border-color: var(--gg-cream);
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+    linear-gradient(160deg, #fff5b8 0%, #e2d36c 60%, #a88841 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -3px 0 rgba(110, 88, 30, 0.5),
+    0 0 0 3px rgba(246, 240, 210, 0.7),
+    0 4px 0 rgba(0, 0, 0, 0.32),
+    0 8px 14px rgba(226, 211, 108, 0.5);
+  transform: translateY(-2px);
+  color: #2a1f0a;
+}
+
+.die--assigned {
+  border-color: rgba(216, 198, 106, 0.32);
+  background: linear-gradient(160deg, rgba(36, 53, 31, 0.7) 0%, rgba(20, 32, 24, 0.7) 100%);
+  color: rgba(246, 240, 210, 0.45);
+  text-shadow: none;
+  cursor: default;
+  opacity: 0.55;
+  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.32);
+}
+
+.assignment-slots {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.assignment-slots--putt {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.slot {
+  display: grid;
+  gap: 3px;
+  padding: 8px 4px;
+  border: 2px dashed rgba(216, 198, 106, 0.42);
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(20, 32, 24, 0.55) 0,
+      rgba(20, 32, 24, 0.55) 4px,
+      rgba(36, 53, 31, 0.55) 4px,
+      rgba(36, 53, 31, 0.55) 8px
+    );
+  cursor: pointer;
+  text-align: center;
+  touch-action: manipulation;
+  transition: border-color 0.12s, background 0.12s, transform 0.08s ease;
+}
+
+.slot--filled {
+  border-style: solid;
+  border-color: var(--gg-gold);
+  background:
+    linear-gradient(180deg, rgba(66, 91, 42, 0.95) 0%, rgba(36, 53, 31, 0.95) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.slot:hover:not(.slot--filled) {
+  border-color: rgba(216, 198, 106, 0.8);
+  transform: translateY(-1px);
+}
+
+.slot-label {
+  color: var(--gg-leaf);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.slot-value {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.15;
+  min-height: 16px;
+}
 
 @media (max-width: 380px), (max-height: 720px) {
   .hole-controls {

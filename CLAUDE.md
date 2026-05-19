@@ -63,3 +63,10 @@ The codebase is split into three layers that communicate in one direction:
 | New gameplay rule tests | `tests/unit/gameLogic.test.ts` or `tests/unit/gameSession.test.ts` |
 | Player-flow regressions | `tests/e2e/prototype-flow.spec.ts` |
 | Known issues and TODOs | `docs/product-backlog.md` (source of truth for product work) |
+| New art / sprite | `public/assets/` (SVG), then register in `src/scenes/BootScene.ts` SPRITES array |
+
+## Art Pipeline
+
+Sprites live in `public/assets/` as SVGs (crisp at any scale, fast to author, no binary diffs). `BootScene.preload()` registers every sprite via `this.load.image(key, path)`; scenes call `this.add.image(x, y, key)` to place them. Helper key functions in `BootScene` map character ids and disc ids to sprite keys (`characterPortraitKey`, `characterTokenKey`, `discKey`).
+
+Each character has both a **portrait** (front-facing, used on the character select cards) and a **token** (top-down, used as the lie marker on the course). Adding a new character requires both SVGs plus matching entries in the `SPRITES` array.

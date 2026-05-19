@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <defs>
+    <radialGradient id="morgaFace" cx="0.4" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#6ec88a"/>
+      <stop offset="0.6" stop-color="#3f8f61"/>
+      <stop offset="1" stop-color="#1d4a30"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="60" cy="113" rx="38" ry="5" fill="#000" opacity="0.32"/>
+  <!-- Hooded cloak -->
+  <path d="M12 110 C18 80 38 70 60 70 C82 70 102 80 108 110 Z" fill="#243a1d" stroke="#0f1808" stroke-width="2.5"/>
+  <path d="M22 84 Q60 50 98 84 L96 96 Q60 78 24 96 Z" fill="#3a5727" stroke="#0f1808" stroke-width="2"/>
+  <!-- Head -->
+  <ellipse cx="60" cy="58" rx="32" ry="32" fill="url(#morgaFace)" stroke="#0f1808" stroke-width="2.5"/>
+  <!-- Hood pulled forward -->
+  <path d="M24 60 Q24 26 60 22 Q96 26 96 60 Q88 50 60 48 Q32 50 24 60 Z" fill="#243a1d" stroke="#0f1808" stroke-width="2.5"/>
+  <!-- Ears (long, drooping) -->
+  <path d="M26 52 L8 56 L22 70 Z" fill="#3f8f61" stroke="#0f1808" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M94 52 L112 56 L98 70 Z" fill="#3f8f61" stroke="#0f1808" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Calm half-closed eyes -->
+  <path d="M40 64 Q48 60 56 64" stroke="#0f1808" stroke-width="2.2" fill="none"/>
+  <path d="M64 64 Q72 60 80 64" stroke="#0f1808" stroke-width="2.2" fill="none"/>
+  <circle cx="48" cy="66" r="2" fill="#0f1808"/>
+  <circle cx="72" cy="66" r="2" fill="#0f1808"/>
+  <!-- Subtle moss freckles -->
+  <circle cx="38" cy="74" r="1.5" fill="#1d4a30"/>
+  <circle cx="44" cy="78" r="1.2" fill="#1d4a30"/>
+  <circle cx="76" cy="74" r="1.5" fill="#1d4a30"/>
+  <circle cx="82" cy="78" r="1.2" fill="#1d4a30"/>
+  <!-- Nose -->
+  <path d="M57 72 Q60 80 63 72" stroke="#0f1808" stroke-width="1.5" fill="#2d6b46"/>
+  <!-- Soft smile -->
+  <path d="M48 86 Q60 90 72 86" stroke="#0f1808" stroke-width="2" fill="none"/>
+  <!-- Pipe (small detail) -->
+  <path d="M72 88 Q82 86 86 80" stroke="#5d4a32" stroke-width="2.5" fill="none"/>
+  <ellipse cx="86" cy="78" rx="3" ry="2" fill="#a8472a"/>
+  <circle cx="87" cy="76" r="1.2" fill="#ffd27a"/>
+</svg>

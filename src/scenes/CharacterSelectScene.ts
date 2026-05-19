@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { gameSession } from "../game/GameSession";
 import type { Character } from "../game/types";
+import { characterPortraitKey } from "./BootScene";
 
 export class CharacterSelectScene extends Phaser.Scene {
   private selectedId: string = gameSession.characters[0].id;
@@ -63,30 +64,35 @@ export class CharacterSelectScene extends Phaser.Scene {
           .rectangle(0, 0, 354, 320, selected ? 0x425b2a : 0x263721, 0.98)
           .setStrokeStyle(selected ? 4 : 2, selected ? 0xe2d36c : 0x719159),
       );
+      // Decorative paper texture line at top
       container.add(this.add.rectangle(0, -156, 330, 9, selected ? 0xe2d36c : 0x6a8732, selected ? 0.92 : 0.54));
-      this.addGoblinPortrait(container, -130, -80, character.palette, selected);
+      container.add(this.add.rectangle(0, -150, 330, 2, 0x10150f, 0.18));
+      // Portrait panel backdrop
+      container.add(this.add.rectangle(-118, -68, 120, 120, 0x141d10, 0.7).setStrokeStyle(2, selected ? 0xe2d36c : 0x6a8732, 0.78));
+      container.add(this.add.rectangle(-118, -68, 118, 118).setStrokeStyle(1, 0x10150f, 0.4));
+      this.addGoblinPortrait(container, -118, -68, character, selected);
       container.add(
-        this.add.text(-82, -128, character.name, {
+        this.add.text(-50, -128, character.name, {
           color: "#f6f0d2",
           fontFamily: "Trebuchet MS",
-          fontSize: "19px",
+          fontSize: "18px",
           fontStyle: "bold",
         }),
       );
       container.add(
-        this.add.text(-82, -100, character.playStyle, {
+        this.add.text(-50, -102, character.playStyle, {
           color: "#e2d36c",
           fontFamily: "Trebuchet MS",
-          fontSize: "15px",
+          fontSize: "14px",
           fontStyle: "bold",
         }),
       );
       container.add(
-        this.add.text(-82, -74, `"${character.quote}"`, {
+        this.add.text(-50, -76, `"${character.quote}"`, {
           color: "#dceab5",
           fontFamily: "Trebuchet MS",
           fontSize: "13px",
-          wordWrap: { width: 245 },
+          wordWrap: { width: 210 },
         }),
       );
       if (selected) {
@@ -241,16 +247,15 @@ export class CharacterSelectScene extends Phaser.Scene {
     container: Phaser.GameObjects.Container,
     x: number,
     y: number,
-    palette: number,
+    character: Character,
     selected: boolean,
   ) {
-    container.add(this.add.circle(x, y + 2, 38, 0x10150f, 0.28));
-    container.add(this.add.circle(x, y, 31, palette, 0.96).setStrokeStyle(selected ? 3 : 2, 0xf6f0d2, selected ? 0.9 : 0.42));
-    container.add(this.add.triangle(x - 25, y - 7, 0, 12, 18, 0, 16, 20, palette, 0.96));
-    container.add(this.add.triangle(x + 25, y - 7, 0, 0, 18, 12, 2, 20, palette, 0.96));
-    container.add(this.add.circle(x - 10, y - 4, 4, 0xf6f0d2));
-    container.add(this.add.circle(x + 10, y - 4, 4, 0xf6f0d2));
-    container.add(this.add.rectangle(x, y + 13, 20, 5, 0x10150f, 0.78));
-    container.add(this.add.ellipse(x + 14, y - 28, 28, 10, 0xe2d36c, 0.88).setAngle(-18));
+    const key = characterPortraitKey(character.id);
+    container.add(
+      this.add
+        .image(x, y, key)
+        .setScale(selected ? 0.95 : 0.9)
+        .setDepth(selected ? 2 : 1),
+    );
   }
 }

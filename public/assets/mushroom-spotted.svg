@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="48" viewBox="0 0 40 48">
+  <defs>
+    <radialGradient id="mushSpotCap" cx="0.4" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#fff5b8"/>
+      <stop offset="0.55" stop-color="#e6d590"/>
+      <stop offset="1" stop-color="#7c6928"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="20" cy="46" rx="14" ry="2" fill="#000" opacity="0.4"/>
+  <path d="M14 30 Q14 42 12 46 L28 46 Q26 42 26 30 Z" fill="#fffbe7" stroke="#3a2f1f" stroke-width="1.8"/>
+  <ellipse cx="20" cy="30" rx="14" ry="4" fill="#5a4524"/>
+  <path d="M4 26 Q4 8 20 6 Q36 8 36 26 Q30 32 20 32 Q10 32 4 26 Z" fill="url(#mushSpotCap)" stroke="#3a2f1f" stroke-width="2"/>
+  <!-- Warty spots -->
+  <circle cx="14" cy="14" r="1.5" fill="#a88841"/>
+  <circle cx="22" cy="10" r="1.2" fill="#a88841"/>
+  <circle cx="27" cy="18" r="1.4" fill="#a88841"/>
+  <circle cx="10" cy="20" r="1.2" fill="#a88841"/>
+  <circle cx="18" cy="22" r="1.6" fill="#a88841"/>
+  <circle cx="29" cy="13" r="1" fill="#a88841"/>
+  <path d="M8 16 Q10 8 18 8" stroke="#fff" stroke-width="1.5" fill="none" opacity="0.55"/>
+</svg>

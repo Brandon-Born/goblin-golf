@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="48" viewBox="0 0 40 48">
+  <defs>
+    <radialGradient id="mushRedCap" cx="0.4" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#ff8c70"/>
+      <stop offset="0.55" stop-color="#d14f41"/>
+      <stop offset="1" stop-color="#6a1a14"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="20" cy="46" rx="14" ry="2" fill="#000" opacity="0.4"/>
+  <!-- Stem -->
+  <path d="M14 30 Q14 42 12 46 L28 46 Q26 42 26 30 Z" fill="#f6f0d2" stroke="#3a2f1f" stroke-width="1.8"/>
+  <path d="M16 32 L16 44" stroke="#d8c66a" stroke-width="0.8" opacity="0.6"/>
+  <path d="M22 32 L22 44" stroke="#d8c66a" stroke-width="0.8" opacity="0.6"/>
+  <!-- Cap underside -->
+  <ellipse cx="20" cy="30" rx="14" ry="4" fill="#5a3324"/>
+  <!-- Cap top -->
+  <path d="M4 26 Q4 8 20 6 Q36 8 36 26 Q30 32 20 32 Q10 32 4 26 Z" fill="url(#mushRedCap)" stroke="#3a1a14" stroke-width="2"/>
+  <!-- Spots -->
+  <ellipse cx="14" cy="14" rx="3" ry="2.5" fill="#f6f0d2"/>
+  <ellipse cx="24" cy="12" rx="2.5" ry="2" fill="#f6f0d2"/>
+  <ellipse cx="28" cy="20" rx="2" ry="1.5" fill="#f6f0d2"/>
+  <ellipse cx="10" cy="22" rx="1.8" ry="1.4" fill="#f6f0d2"/>
+  <ellipse cx="20" cy="22" rx="2" ry="1.5" fill="#f6f0d2"/>
+  <!-- Highlight -->
+  <path d="M8 16 Q10 8 18 8" stroke="#fff" stroke-width="1.5" fill="none" opacity="0.5"/>
+</svg>

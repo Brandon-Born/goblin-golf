@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56">
+  <defs>
+    <radialGradient id="skrakTokenGloss" cx="0.5" cy="0.4" r="0.6">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="28" cy="48" rx="20" ry="4" fill="#000" opacity="0.42"/>
+  <circle cx="28" cy="28" r="20" fill="#5a2a18" stroke="#10150f" stroke-width="2.5"/>
+  <rect x="14" y="24" width="28" height="6" fill="#3a2515" stroke="#10150f" stroke-width="1"/>
+  <circle cx="28" cy="26" r="13" fill="#d96b3e" stroke="#10150f" stroke-width="2"/>
+  <ellipse cx="24" cy="26" r="2" fill="#fdf5d2" stroke="#10150f" stroke-width="1"/>
+  <ellipse cx="32" cy="26" r="2" fill="#fdf5d2" stroke="#10150f" stroke-width="1"/>
+  <circle cx="24" cy="26" r="1.2" fill="#a8472a"/>
+  <circle cx="32" cy="26" r="1.2" fill="#a8472a"/>
+  <path d="M22 32 L26 36 L30 32 L34 36" stroke="#10150f" stroke-width="1.5" fill="none"/>
+  <circle cx="28" cy="28" r="20" fill="url(#skrakTokenGloss)"/>
+  <ellipse cx="42" cy="34" rx="7" ry="3" fill="#1f5677" stroke="#10150f" stroke-width="1.5"/>
+  <ellipse cx="42" cy="33" rx="5" ry="1" fill="#fff" opacity="0.55"/>
+</svg>

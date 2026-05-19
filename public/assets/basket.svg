@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="200" viewBox="0 0 140 200">
+  <defs>
+    <linearGradient id="basketMetal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f3e29a"/>
+      <stop offset="0.5" stop-color="#d8c66a"/>
+      <stop offset="1" stop-color="#8a7635"/>
+    </linearGradient>
+    <linearGradient id="basketCage" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a4630"/>
+      <stop offset="1" stop-color="#161d12"/>
+    </linearGradient>
+  </defs>
+  <!-- Ground shadow -->
+  <ellipse cx="70" cy="194" rx="44" ry="6" fill="#000" opacity="0.34"/>
+  <!-- Post -->
+  <rect x="64" y="56" width="12" height="138" rx="2" fill="url(#basketMetal)" stroke="#3a2f1f" stroke-width="2"/>
+  <rect x="66" y="58" width="3" height="130" fill="#fff7d0" opacity="0.4"/>
+  <!-- Lower basket catch -->
+  <path d="M28 122 L40 168 H100 L112 122 Z" fill="url(#basketCage)" stroke="#d8c66a" stroke-width="3" stroke-linejoin="round"/>
+  <ellipse cx="70" cy="122" rx="42" ry="11" fill="#2f3a25" stroke="#d8c66a" stroke-width="3"/>
+  <ellipse cx="70" cy="121" rx="42" ry="5" fill="#0c1108" opacity="0.55"/>
+  <!-- Cage mesh hint -->
+  <g stroke="#d8c66a" stroke-width="1.2" opacity="0.55" fill="none">
+    <path d="M42 130 L46 162"/>
+    <path d="M52 132 L54 165"/>
+    <path d="M62 134 L62 166"/>
+    <path d="M70 134 L70 166"/>
+    <path d="M78 134 L78 166"/>
+    <path d="M88 132 L86 165"/>
+    <path d="M98 130 L94 162"/>
+    <path d="M30 135 L110 135" opacity="0.35"/>
+    <path d="M34 150 L106 150" opacity="0.35"/>
+  </g>
+  <!-- Chains -->
+  <g stroke="#e9e4d2" stroke-width="2.2" stroke-linecap="round" opacity="0.85">
+    <line x1="48" y1="50" x2="44" y2="118"/>
+    <line x1="58" y1="50" x2="56" y2="118"/>
+    <line x1="70" y1="50" x2="70" y2="118"/>
+    <line x1="82" y1="50" x2="84" y2="118"/>
+    <line x1="92" y1="50" x2="96" y2="118"/>
+  </g>
+  <!-- Chain link highlights -->
+  <g fill="#fffbe7" stroke="#3a2f1f" stroke-width="0.8" opacity="0.95">
+    <circle cx="44" cy="84" r="2.5"/>
+    <circle cx="56" cy="76" r="2.5"/>
+    <circle cx="70" cy="80" r="2.6"/>
+    <circle cx="84" cy="76" r="2.5"/>
+    <circle cx="96" cy="84" r="2.5"/>
+    <circle cx="46" cy="104" r="2.2"/>
+    <circle cx="59" cy="98" r="2.2"/>
+    <circle cx="73" cy="102" r="2.3"/>
+    <circle cx="87" cy="98" r="2.2"/>
+    <circle cx="94" cy="104" r="2.2"/>
+  </g>
+  <!-- Upper deflector ring -->
+  <ellipse cx="70" cy="46" rx="38" ry="11" fill="#10150f" opacity="0.78"/>
+  <ellipse cx="70" cy="44" rx="38" ry="11" fill="url(#basketCage)" stroke="#d8c66a" stroke-width="3"/>
+  <ellipse cx="70" cy="40" rx="36" ry="3" fill="#d8c66a" opacity="0.55"/>
+  <!-- Top finial cap -->
+  <circle cx="70" cy="28" r="7" fill="url(#basketMetal)" stroke="#3a2f1f" stroke-width="2"/>
+  <circle cx="69" cy="26" r="2" fill="#fffbe7" opacity="0.8"/>
+</svg>

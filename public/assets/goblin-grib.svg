@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <defs>
+    <radialGradient id="gribFace" cx="0.4" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#9be086"/>
+      <stop offset="0.6" stop-color="#5fbf5f"/>
+      <stop offset="1" stop-color="#2d6932"/>
+    </radialGradient>
+  </defs>
+  <!-- Shadow -->
+  <ellipse cx="60" cy="113" rx="38" ry="5" fill="#000" opacity="0.32"/>
+  <!-- Shoulders/cloak hint -->
+  <path d="M14 110 C22 84 40 76 60 76 C80 76 98 84 106 110 Z" fill="#3b5723" stroke="#1a2510" stroke-width="2.5"/>
+  <path d="M28 108 L36 92 L44 108 Z" fill="#586a36" opacity="0.7"/>
+  <path d="M92 108 L84 92 L76 108 Z" fill="#586a36" opacity="0.7"/>
+  <!-- Head -->
+  <ellipse cx="60" cy="56" rx="34" ry="34" fill="url(#gribFace)" stroke="#1a2510" stroke-width="2.5"/>
+  <!-- Ears -->
+  <path d="M26 50 L10 36 L20 60 Z" fill="#5fbf5f" stroke="#1a2510" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M94 50 L110 36 L100 60 Z" fill="#5fbf5f" stroke="#1a2510" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M22 46 L14 38" stroke="#2d6932" stroke-width="1.5"/>
+  <path d="M98 46 L106 38" stroke="#2d6932" stroke-width="1.5"/>
+  <!-- Brow/wrinkle -->
+  <path d="M36 50 Q48 44 56 50" stroke="#2d6932" stroke-width="2" fill="none"/>
+  <path d="M64 50 Q72 44 84 50" stroke="#2d6932" stroke-width="2" fill="none"/>
+  <!-- Eyes (alert white with golden pupil) -->
+  <ellipse cx="48" cy="58" rx="7" ry="6" fill="#fdf5d2" stroke="#1a2510" stroke-width="1.8"/>
+  <ellipse cx="72" cy="58" rx="7" ry="6" fill="#fdf5d2" stroke="#1a2510" stroke-width="1.8"/>
+  <circle cx="50" cy="59" r="3" fill="#d8c66a"/>
+  <circle cx="74" cy="59" r="3" fill="#d8c66a"/>
+  <circle cx="51" cy="58" r="1" fill="#1a2510"/>
+  <circle cx="75" cy="58" r="1" fill="#1a2510"/>
+  <!-- Nose -->
+  <path d="M58 64 Q60 72 62 64" stroke="#1a2510" stroke-width="1.5" fill="#4ea44c"/>
+  <!-- Mouth & fang -->
+  <path d="M48 78 Q60 84 72 78" stroke="#1a2510" stroke-width="2" fill="#2a1f1a"/>
+  <path d="M54 80 L56 86 L58 80 Z" fill="#fdf5d2" stroke="#1a2510" stroke-width="1"/>
+  <!-- Bandana / leaf -->
+  <path d="M22 28 Q50 12 90 24 Q92 36 76 38 Q56 44 30 40 Z" fill="#d8c66a" stroke="#1a2510" stroke-width="2"/>
+  <circle cx="46" cy="26" r="2" fill="#a8472a"/>
+  <circle cx="62" cy="22" r="2" fill="#a8472a"/>
+  <circle cx="76" cy="26" r="2" fill="#a8472a"/>
+</svg>

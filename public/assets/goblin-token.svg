@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56">
+  <defs>
+    <radialGradient id="tokenFace" cx="0.5" cy="0.4" r="0.6">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- Soft ground shadow -->
+  <ellipse cx="28" cy="48" rx="20" ry="4" fill="#000" opacity="0.4"/>
+  <!-- Cloak/body ring (uses currentColor for tint) -->
+  <circle cx="28" cy="30" r="20" fill="currentColor" stroke="#10150f" stroke-width="2.5"/>
+  <!-- Inner head -->
+  <circle cx="28" cy="26" r="13" fill="currentColor" stroke="#10150f" stroke-width="2"/>
+  <!-- Light hat brim hint -->
+  <ellipse cx="28" cy="20" rx="14" ry="3" fill="#10150f" opacity="0.55"/>
+  <!-- Eyes (always visible) -->
+  <circle cx="24" cy="26" r="2" fill="#fdf5d2"/>
+  <circle cx="32" cy="26" r="2" fill="#fdf5d2"/>
+  <circle cx="24.5" cy="26.5" r="0.8" fill="#10150f"/>
+  <circle cx="32.5" cy="26.5" r="0.8" fill="#10150f"/>
+  <!-- Glossy highlight -->
+  <circle cx="28" cy="30" r="20" fill="url(#tokenFace)"/>
+  <!-- Disc held in hand (small) -->
+  <ellipse cx="42" cy="34" rx="7" ry="3" fill="#e2d36c" stroke="#10150f" stroke-width="1.5"/>
+  <ellipse cx="42" cy="33" rx="5" ry="1" fill="#fff" opacity="0.55"/>
+</svg>

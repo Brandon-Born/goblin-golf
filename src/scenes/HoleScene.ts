@@ -1,7 +1,9 @@
 import Phaser from "phaser";
 import { describeAngle, describeDisc, gameSession } from "../game/GameSession";
-import { distanceBetween, isTapInAvailable } from "../game/logic";
-import type { DiscType, LieQuality, ReleaseAngle, ShotForecast, ShotInput, ShotResult, Vector2 } from "../game/types";
+import { diceToShotInput, distanceBetween, isTapInAvailable, windClarityFromDie } from "../game/logic";
+import { ANGLE_DIAL_DEGREES, POWER_DIAL, PUTT_AIM_DIAL_PX, PUTT_POWER_DIAL, WIND_CLARITY_DIAL } from "../game/data";
+import type { DieValue, DiscType, LieQuality, PuttDiceRoll, ReleaseAngle, ShotDiceAssignment, ShotDiceRoll, ShotForecast, ShotResult, Vector2 } from "../game/types";
+import { characterTokenKey, discKey } from "./BootScene";
 
 type HoleMode = "setup" | "flight" | "putting";
 
@@ -21,10 +23,6 @@ interface Layout {
 
 export class HoleScene extends Phaser.Scene {
   private layout!: Layout;
-  private aimOffsetDegrees = 0;
-  private power = 0.9;
-  private puttPower = 0.64;
-  private puttOffset: Vector2 = { x: 0, y: 0 };
   private disc: DiscType = "driver";
   private releaseAngle: ReleaseAngle = "flat";
   private mode: HoleMode = "setup";
@@ -38,15 +36,24 @@ export class HoleScene extends Phaser.Scene {
   private aimLabel?: Phaser.GameObjects.Text;
   private lieMarker?: Phaser.GameObjects.Arc;
   private flightPath?: Phaser.GameObjects.Graphics;
-  private flightDisc?: Phaser.GameObjects.Arc;
+  private flightDisc?: Phaser.GameObjects.Image;
   private crosshair?: Phaser.GameObjects.Arc;
   private crosshairLines: Phaser.GameObjects.Line[] = [];
   private puttGuide?: Phaser.GameObjects.Graphics;
-  private readonly defaultStatus = "Drag fairway to aim. Tap Disc/Angle to cycle. Drag power, then throw.";
+  private windZoneObjects: Phaser.GameObjects.GameObject[] = [];
+  private readonly defaultStatus = "Roll dice, assign to slots, then throw.";
   private status = this.defaultStatus;
   private lastResult?: ShotResult;
   private controlsLocked = false;
   private queuedThrowClicks = 0;
+
+  // Dice state (managed by the scene; committed to gameSession at throw time)
+  private shotDice: ShotDiceRoll | null = null;
+  private shotSlots: { angle: number | null; power: number | null; wind: number | null } = { angle: null, power: null, wind: null };
+  private puttDice: PuttDiceRoll | null = null;
+  private puttSlots: { aim: number | null; power: number | null } = { aim: null, power: null };
+  private selectedDieIndex: number | null = null;
+  private windClarity = 1.0;
 
   constructor() {
     super("HoleScene");
@@ -92,8 +99,6 @@ export class HoleScene extends Phaser.Scene {
     }
     this.createHud();
     this.createOverlay();
-    this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => this.handleDrag(pointer));
-    this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => this.handleDrag(pointer));
     this.input.on("pointerup", () => this.updateHud());
     this.updateHud();
   }
@@ -110,34 +115,58 @@ export class HoleScene extends Phaser.Scene {
 
     const basket = this.worldToScreen(gameSession.hole.basket);
     const lie = this.worldToScreen(gameSession.holeState.lie);
+    const tee = this.worldToScreen(gameSession.hole.tee);
 
     this.add.rectangle(cx, cy, W, H, 0x142018);
-    // Fairway center strip
-    this.add.rectangle(playCx, cy, playWidth, fairwayH, 0x416b34).setStrokeStyle(3, 0xd8c66a, 0.45);
-    // OB top and bottom strips
-    this.add.rectangle(playCx, playTop + obH / 2, playWidth, obH, 0x4d3c81, 0.86);
-    this.add.rectangle(playCx, playBottom - obH / 2, playWidth, obH, 0x4d3c81, 0.86);
-    this.add.text(playLeft + 50, playTop + obH / 2, "OB", { color: "#f6f0d2", fontFamily: "Trebuchet MS", fontSize: "18px" }).setOrigin(0.5);
-    this.add.text(playLeft + 50, playBottom - obH / 2, "OB", { color: "#f6f0d2", fontFamily: "Trebuchet MS", fontSize: "18px" }).setOrigin(0.5);
+    // OB strips: textured tile pattern, masked to play area
+    this.add.tileSprite(playCx, playTop + obH / 2, playWidth, obH, "ob-tile").setAlpha(0.92);
+    this.add.tileSprite(playCx, playBottom - obH / 2, playWidth, obH, "ob-tile").setAlpha(0.92);
+    // Fairway: grass tile texture with subtle border framing
+    this.add.tileSprite(playCx, cy, playWidth, fairwayH, "grass-tile");
+    this.add.rectangle(playCx, cy, playWidth, fairwayH).setStrokeStyle(3, 0xd8c66a, 0.42);
+    // OB labels float on the textured ground
+    this.add
+      .text(playLeft + 50, playTop + obH / 2, "OB", {
+        color: "#f6f0d2", fontFamily: "Trebuchet MS", fontSize: "18px", fontStyle: "bold",
+        stroke: "#10150f", strokeThickness: 3,
+      })
+      .setOrigin(0.5);
+    this.add
+      .text(playLeft + 50, playBottom - obH / 2, "OB", {
+        color: "#f6f0d2", fontFamily: "Trebuchet MS", fontSize: "18px", fontStyle: "bold",
+        stroke: "#10150f", strokeThickness: 3,
+      })
+      .setOrigin(0.5);
     this.drawWindZones();
 
+    // Tee marker behind the goblin token
+    this.add.image(tee.x, tee.y + 10, "tee-marker").setScale(0.85).setDepth(3);
+
     this.drawBasketTarget(basket.x, basket.y);
-    this.drawBasketIcon(basket.x + 10, basket.y, 0.64);
+    this.drawBasketIcon(basket.x + 6, basket.y - 4, 0.5);
 
     this.drawScrambleZoneBoundaries();
     const hazard1 = this.worldToScreen({ x: 265, y: 76 });
     const hazard2 = this.worldToScreen({ x: 450, y: 278 });
-    this.drawHazardLabel(hazard1.x, hazard1.y, "RUINS", "SCRAMBLE LIE");
-    this.drawHazardLabel(hazard2.x, hazard2.y, "RUINS", "SCRAMBLE LIE");
+    this.add.image(hazard1.x, hazard1.y, "ruins").setScale(0.85).setDepth(4);
+    this.add.image(hazard2.x, hazard2.y, "ruins").setScale(0.85).setDepth(4);
+    this.drawHazardLabel(hazard1.x, hazard1.y + 38, "RUINS", "SCRAMBLE LIE");
+    this.drawHazardLabel(hazard2.x, hazard2.y + 38, "RUINS", "SCRAMBLE LIE");
+
     const mush1 = this.worldToScreen({ x: 200, y: 265 });
     const mush2 = this.worldToScreen({ x: 680, y: 80 });
-    this.drawMushroom(mush1.x, mush1.y, 0xd14f41);
-    this.drawMushroom(mush2.x, mush2.y, 0xf2e7b8);
+    this.add.image(mush1.x, mush1.y, "mushroom-red").setScale(0.85).setDepth(4);
+    this.add.image(mush2.x, mush2.y, "mushroom-spotted").setScale(0.85).setDepth(4);
 
-    this.add.circle(lie.x, lie.y, 24, 0x10150f, 0.75).setStrokeStyle(4, 0xe2d36c);
-    this.add.circle(lie.x, lie.y, 11, 0xf6f0d2).setStrokeStyle(3, gameSession.selectedCharacter.palette);
-    this.add.circle(lie.x - 22, lie.y + 18, 14, gameSession.selectedCharacter.palette).setStrokeStyle(3, 0x10150f);
-    const lieLabelY = lie.y > cy ? lie.y - 58 : lie.y + 46;
+    // Decorative trees in OB strips to fill the negative space
+    this.add.image(this.worldToScreen({ x: 90, y: 50 }).x, this.worldToScreen({ x: 90, y: 50 }).y, "tree").setScale(0.7).setDepth(3);
+    this.add.image(this.worldToScreen({ x: 800, y: 290 }).x, this.worldToScreen({ x: 800, y: 290 }).y, "tree").setScale(0.7).setDepth(3);
+    this.add.image(this.worldToScreen({ x: 540, y: 36 }).x, this.worldToScreen({ x: 540, y: 36 }).y, "tree").setScale(0.55).setDepth(3);
+
+    // Goblin token at the current lie
+    const tokenKey = characterTokenKey(gameSession.selectedCharacter.id);
+    this.add.image(lie.x, lie.y, tokenKey).setScale(0.78).setDepth(6);
+    const lieLabelY = lie.y > cy ? lie.y - 50 : lie.y + 50;
     const lieLabelX = Math.min(lie.x, this.layout.playRight - 72);
     this.add
       .text(lieLabelX, lieLabelY, "CURRENT LIE / DISC", {
@@ -150,7 +179,7 @@ export class HoleScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setDepth(7);
-    this.lieMarker = this.add.circle(lie.x, lie.y, 13, 0xe2d36c, 0.22).setStrokeStyle(4, 0xf6f0d2).setDepth(6);
+    this.lieMarker = this.add.circle(lie.x, lie.y, 26, 0xe2d36c, 0).setStrokeStyle(3, 0xe2d36c, 0.85).setDepth(5);
     this.aimLine = undefined;
     this.aimPath = this.add.graphics().setDepth(4);
     this.forecastZone = this.add.graphics().setDepth(5);
@@ -191,30 +220,33 @@ export class HoleScene extends Phaser.Scene {
   }
 
   private drawBasketIcon(x: number, y: number, scale: number) {
-    this.add.rectangle(x, y + 42 * scale, 8 * scale, 88 * scale, 0xd8c66a);
-    this.add.ellipse(x, y - 18 * scale, 78 * scale, 22 * scale, 0x10150f).setStrokeStyle(4, 0xd8c66a);
-    this.add.rectangle(x, y + 22 * scale, 58 * scale, 52 * scale, 0x10150f, 0.28).setStrokeStyle(3, 0xd8c66a);
-    this.add.circle(x, y - 18 * scale, 9 * scale, 0xf6f0d2);
+    this.add.image(x, y, "basket").setScale(scale).setDepth(5);
   }
 
   private drawHazardLabel(x: number, y: number, label: string, detail?: string) {
-    this.add.rectangle(x, y + 12, 54, 30, 0x85877d);
-    this.add.rectangle(x + 11, y - 12, 36, 40, 0x65645e);
     this.add
-      .text(x, y + 44, label, {
-        color: "#f6f0d2",
+      .text(x, y, label, {
+        color: "#10150f",
         fontFamily: "Trebuchet MS",
-        fontSize: "12px",
+        fontSize: "11px",
+        fontStyle: "bold",
+        backgroundColor: "#cac8b9",
+        padding: { x: 5, y: 2 },
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(7);
     if (detail) {
       this.add
-        .text(x, y + 58, detail, {
-          color: "#cfe4a4",
+        .text(x, y + 14, detail, {
+          color: "#fdf5d2",
           fontFamily: "Trebuchet MS",
-          fontSize: "10px",
+          fontSize: "9px",
+          fontStyle: "bold",
+          backgroundColor: "#3a2515",
+          padding: { x: 4, y: 1 },
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5)
+        .setDepth(7);
     }
   }
 
@@ -240,51 +272,37 @@ export class HoleScene extends Phaser.Scene {
     }
   }
 
-  private drawMushroom(x: number, y: number, color: number) {
-    this.add.circle(x, y, 13, color);
-    this.add.rectangle(x, y + 14, 9, 18, 0xe7d7ad);
-  }
-
   private drawWindZones() {
+    this.windZoneObjects = [];
     for (const zone of gameSession.hole.windZones ?? []) {
       const rect = this.worldRectToScreen(zone.rect);
       const center = {
         x: rect.x + rect.width / 2,
         y: rect.y + rect.height / 2,
       };
-      const arrow = {
-        x: Math.cos(Phaser.Math.DegToRad(zone.directionDegrees)),
-        y: Math.sin(Phaser.Math.DegToRad(zone.directionDegrees)),
-      };
       const color = zone.id === "left-tailwind" ? 0x8fd8ff : 0xffd27a;
-
-      this.add.rectangle(center.x, center.y, rect.width, rect.height, color, 0.13).setStrokeStyle(2, color, 0.44);
-      this.add.line(0, 0, center.x - arrow.x * 20, center.y - arrow.y * 20, center.x + arrow.x * 20, center.y + arrow.y * 20, color, 0.82).setLineWidth(4);
-      this.add
-        .triangle(
-          center.x + arrow.x * 28,
-          center.y + arrow.y * 28,
-          0,
-          -8,
-          -7,
-          7,
-          7,
-          7,
-          color,
-          0.88,
-        )
-        .setRotation(Phaser.Math.DegToRad(zone.directionDegrees) + Math.PI / 2);
-      this.add
-        .text(center.x, center.y + rect.height / 2 - 18, zone.label.toUpperCase(), {
-          color: "#10150f",
-          fontFamily: "Trebuchet MS",
-          fontSize: "10px",
-          fontStyle: "bold",
-          backgroundColor: "#f6f0d2",
-          padding: { x: 5, y: 2 },
-        })
-        .setOrigin(0.5)
+      const colorHex = zone.id === "left-tailwind" ? "#8fd8ff" : "#ffd27a";
+      const arrowImage = this.add
+        .image(center.x, center.y, "wind-arrow")
+        .setRotation(Phaser.Math.DegToRad(zone.directionDegrees))
+        .setScale(1.1)
+        .setTint(color)
         .setDepth(3);
+      this.windZoneObjects.push(
+        this.add.rectangle(center.x, center.y, rect.width, rect.height, color, 0.13).setStrokeStyle(2, color, 0.44),
+        arrowImage,
+        this.add
+          .text(center.x, center.y + rect.height / 2 - 18, zone.label.toUpperCase(), {
+            color: "#10150f",
+            fontFamily: "Trebuchet MS",
+            fontSize: "10px",
+            fontStyle: "bold",
+            backgroundColor: colorHex,
+            padding: { x: 5, y: 2 },
+          })
+          .setOrigin(0.5)
+          .setDepth(3),
+      );
     }
   }
 
@@ -295,30 +313,36 @@ export class HoleScene extends Phaser.Scene {
     const obH = (playHeight - fairwayH) / 2;
 
     this.add.rectangle(cx, cy, W, H, 0x142018);
-    this.add.rectangle(playCx, cy, playWidth + 120, fairwayH + 64, 0x233b26).setStrokeStyle(3, 0xf6f0d2, 0.18);
-    this.add.rectangle(playCx, cy, playWidth, fairwayH, 0x5d8743, 0.9);
-    this.add.rectangle(playCx, playTop + obH / 2, playWidth, obH, 0x4d3c81, 0.62);
-    this.add.rectangle(playCx, playBottom - obH / 2, playWidth, obH, 0x4d3c81, 0.62);
-    this.add.text(playLeft + 40, playTop + obH / 2, "OB", { color: "#f1c8ff", fontFamily: "Trebuchet MS", fontSize: "14px" }).setOrigin(0.5);
-    this.add.text(playLeft + 40, playBottom - obH / 2, "OB", { color: "#f1c8ff", fontFamily: "Trebuchet MS", fontSize: "14px" }).setOrigin(0.5);
+    this.add.tileSprite(playCx, playTop + obH / 2, playWidth, obH, "ob-tile").setAlpha(0.85);
+    this.add.tileSprite(playCx, playBottom - obH / 2, playWidth, obH, "ob-tile").setAlpha(0.85);
+    this.add.tileSprite(playCx, cy, playWidth, fairwayH, "grass-tile");
+    this.add.rectangle(playCx, cy, playWidth, fairwayH).setStrokeStyle(3, 0xd8c66a, 0.42);
+    this.add
+      .text(playLeft + 40, playTop + obH / 2, "OB", {
+        color: "#f6f0d2", fontFamily: "Trebuchet MS", fontSize: "14px", fontStyle: "bold",
+        stroke: "#10150f", strokeThickness: 3,
+      })
+      .setOrigin(0.5);
+    this.add
+      .text(playLeft + 40, playBottom - obH / 2, "OB", {
+        color: "#f6f0d2", fontFamily: "Trebuchet MS", fontSize: "14px", fontStyle: "bold",
+        stroke: "#10150f", strokeThickness: 3,
+      })
+      .setOrigin(0.5);
     this.drawWindZones();
 
+    // Decorative scenery — ruins and mushrooms
     for (const [wx, wy] of [[280, 90], [550, 288], [430, 74], [720, 274]]) {
       const { x, y } = this.worldToScreen({ x: wx, y: wy });
-      this.add.rectangle(x, y, 50, 34, 0x7b7c78);
-      this.add.rectangle(x + 8, y - 26, 34, 42, 0x65645e);
+      this.add.image(x, y, "ruins").setScale(0.62).setDepth(3);
     }
-
-    for (const [wx, wy, color] of [[200, 270, 0xd14f41], [650, 90, 0xf2e7b8], [350, 74, 0xd14f41], [750, 274, 0xf2e7b8]]) {
+    for (const [wx, wy, redCap] of [[200, 270, 1], [650, 90, 0], [350, 74, 1], [750, 274, 0]] as const) {
       const { x, y } = this.worldToScreen({ x: wx, y: wy });
-      this.add.circle(x, y, 13, color);
-      this.add.rectangle(x, y + 13, 9, 18, 0xe7d7ad);
+      this.add.image(x, y, redCap ? "mushroom-red" : "mushroom-spotted").setScale(0.6).setDepth(4);
     }
-
     for (const [wx, wy] of [[180, 84], [330, 282], [490, 78]]) {
       const { x, y } = this.worldToScreen({ x: wx, y: wy });
-      this.add.ellipse(x, y, 34, 9, 0xe9e0c9);
-      this.add.circle(x - 14, y - 4, 6, 0xe9e0c9);
+      this.add.image(x, y, "tree").setScale(0.55).setDepth(3);
     }
 
     const basket = this.worldToScreen(gameSession.hole.basket);
@@ -328,11 +352,13 @@ export class HoleScene extends Phaser.Scene {
         fontFamily: "Trebuchet MS",
         fontSize: "15px",
         fontStyle: "bold",
+        stroke: "#10150f",
+        strokeThickness: 4,
       })
       .setOrigin(0.5);
     this.drawBasketTarget(basket.x, basket.y);
-    this.add.circle(basket.x, basket.y, 9, 0xf6f0d2);
-    this.lieMarker = this.add.circle(0, 0, 13, 0xe2d36c, 0.45).setStrokeStyle(4, 0xf6f0d2);
+    this.drawBasketIcon(basket.x + 6, basket.y - 4, 0.5);
+    this.lieMarker = this.add.circle(0, 0, 22, 0xe2d36c, 0).setStrokeStyle(3, 0xe2d36c, 0.85).setDepth(5);
     this.aimLine = this.add.line(0, 0, playLeft + 100, cy, this.layout.playRight - 100, cy, 0xe2d36c, 0.85).setLineWidth(5).setVisible(false);
     this.updateLieMarker();
   }
@@ -383,28 +409,41 @@ export class HoleScene extends Phaser.Scene {
     if (this.status !== this.defaultStatus) {
       this.addStatusPanel("Shot result", this.status);
     }
-    const forecast = gameSession.forecastThrow(this.currentShotInput());
+
+    const assignment = this.buildShotAssignment();
+    const input = diceToShotInput(assignment, this.basketBearingDegrees(), this.disc, this.releaseAngle);
+    const forecast = gameSession.forecastThrow(input);
+    const allAssigned = this.isAllAssigned();
+
+    // Recompute windClarity so the panel always reflects the current WIND slot assignment.
+    const windDieForPanel = this.shotSlots.wind !== null && this.shotDice
+      ? this.shotDice[this.shotSlots.wind] as DieValue
+      : 4 as DieValue;
+    this.windClarity = windClarityFromDie(windDieForPanel);
+
     this.addScreenStatePanel([
       ["Lie", this.currentLieQualityLabel()],
-      ["Wind", this.routeWindLabel(forecast)],
-      ["Forecast", this.previewLandingLabel(forecast)],
-      ["Risk", this.previewRiskLabel(forecast)],
+      ["Wind", this.routeWindLabel(forecast, this.windClarity)],
+      ["Forecast", allAssigned ? this.previewLandingLabel(forecast) : "—"],
+      ["Risk", allAssigned ? this.previewRiskLabel(forecast) : "—"],
     ]);
 
-    const aimCard = this.createElement("div", "control-card split-card");
-    aimCard.append(this.createReadout("Aim", this.formatAimOffset()));
-    aimCard.append(this.createReadout("Power", `${Math.round(this.power * 100)}%`));
-    this.overlay.append(aimCard);
-
-    this.addPowerPad({
-      label: "Throw power",
-      value: this.power,
-      onValue: (value) => {
-        this.power = value;
+    if (!this.shotDice) {
+      const controls = this.createElement("div", "button-grid single-action");
+      this.addButton("Roll Dice", () => {
+        this.shotDice = gameSession.rollShotDice();
+        this.shotSlots = { angle: null, power: null, wind: null };
+        this.selectedDieIndex = null;
+        this.renderOverlay();
         this.updateAimLine();
         this.updateHud();
-      },
-    });
+      }, controls, "primary-action");
+      this.overlay.append(controls);
+      return;
+    }
+
+    this.renderDiceTiles(this.shotDice, this.shotSlots);
+    this.renderShotAssignmentSlots();
 
     const controls = this.createElement("div", "button-grid");
     this.addButton(`Disc: ${describeDisc(this.disc)}`, () => {
@@ -420,37 +459,174 @@ export class HoleScene extends Phaser.Scene {
       this.renderOverlay();
       this.updateHud();
     }, controls);
-    this.addButton("Throw disc", () => this.throwDisc(), controls, "primary-action");
+    this.addButton("Throw disc", () => this.throwDisc(), controls, "primary-action", !allAssigned || this.controlsLocked);
     this.overlay.append(controls);
+  }
+
+  private renderDiceTiles(
+    dice: ShotDiceRoll | PuttDiceRoll,
+    slots: { angle?: number | null; power: number | null; wind?: number | null; aim?: number | null },
+  ) {
+    const assignedIndices = new Set(Object.values(slots).filter((v): v is number => v !== null));
+    const container = this.createElement("div", "dice-display");
+
+    for (let index = 0; index < dice.length; index++) {
+      const die = this.createElement("button", "die");
+      die.type = "button";
+      die.textContent = String(dice[index]);
+      die.ariaLabel = `Die ${index + 1}: ${dice[index]}`;
+
+      if (assignedIndices.has(index)) {
+        die.classList.add("die--assigned");
+        die.disabled = true;
+      } else if (this.selectedDieIndex === index) {
+        die.classList.add("die--selected");
+      }
+
+      die.addEventListener("click", () => {
+        if (assignedIndices.has(index)) return;
+        this.selectedDieIndex = this.selectedDieIndex === index ? null : index;
+        this.renderOverlay();
+      });
+      container.append(die);
+    }
+    this.overlay.append(container);
+  }
+
+  private renderShotAssignmentSlots() {
+    const dice = this.shotDice!;
+    const slots = this.shotSlots;
+    const container = this.createElement("div", "assignment-slots");
+
+    const slotDefs: { key: keyof typeof slots; label: string; getValue: () => string }[] = [
+      {
+        key: "angle",
+        label: "ANGLE",
+        getValue: () => {
+          if (slots.angle === null) return "—";
+          const deg = ANGLE_DIAL_DEGREES[dice[slots.angle] - 1];
+          return `${deg > 0 ? "+" : ""}${deg}°`;
+        },
+      },
+      {
+        key: "power",
+        label: "POWER",
+        getValue: () => slots.power === null ? "—" : `${Math.round(POWER_DIAL[dice[slots.power] - 1] * 100)}%`,
+      },
+      {
+        key: "wind",
+        label: "WIND",
+        getValue: () => slots.wind === null ? "—" : `${Math.round(WIND_CLARITY_DIAL[dice[slots.wind] - 1] * 100)}% read`,
+      },
+    ];
+
+    for (const { key, label, getValue } of slotDefs) {
+      const slot = this.createElement("div", slots[key] !== null ? "slot slot--filled" : "slot");
+      const labelEl = this.createElement("span", "slot-label");
+      labelEl.textContent = label;
+      const valueEl = this.createElement("span", "slot-value");
+      valueEl.textContent = getValue();
+      slot.append(labelEl, valueEl);
+
+      slot.addEventListener("click", () => {
+        if (slots[key] !== null) {
+          this.shotSlots[key] = null;
+          this.selectedDieIndex = null;
+        } else if (this.selectedDieIndex !== null) {
+          this.shotSlots[key] = this.selectedDieIndex;
+          this.selectedDieIndex = null;
+        }
+        this.renderOverlay();
+        this.updateAimLine();
+        this.updateHud();
+      });
+      container.append(slot);
+    }
+    this.overlay.append(container);
   }
 
   private renderPuttingControls() {
     this.addStatusPanel("Putting view", this.status);
     this.addScreenStatePanel([
-      ["Current lie", "PUTT MARKER"],
-      ["Target", "BASKET CHAINS"],
-      ["Putt forecast", `${Math.round(gameSession.distanceToBasket)} ft with wind drift`],
-      ["Next action", "Aim crosshair, set power, Release putt"],
+      ["Distance", `${Math.round(gameSession.distanceToBasket)} ft`],
+      ["Wind", `${gameSession.wind.strength} @ ${gameSession.wind.directionDegrees}°`],
+      ["AIM die", this.puttSlots.aim !== null && this.puttDice ? `${PUTT_AIM_DIAL_PX[this.puttDice[this.puttSlots.aim] - 1]} px` : "—"],
+      ["POWER die", this.puttSlots.power !== null && this.puttDice ? `${Math.round(PUTT_POWER_DIAL[this.puttDice[this.puttSlots.power] - 1] * 100)}%` : "—"],
     ]);
 
-    const distance = Math.round(gameSession.distanceToBasket);
-    const aimCard = this.createElement("div", "control-card split-card");
-    aimCard.append(this.createReadout("Putt", `${distance} ft`));
-    aimCard.append(this.createReadout("Aim miss", `${Math.round(Math.hypot(this.puttOffset.x, this.puttOffset.y))} px`));
-    this.overlay.append(aimCard);
+    if (isTapInAvailable(gameSession.holeState, gameSession.hole)) {
+      const controls = this.createElement("div", "button-grid single-action");
+      this.addButton("Tap In", () => this.releasePutt(), controls, "primary-action");
+      this.overlay.append(controls);
+      return;
+    }
 
-    this.addPowerPad({
-      label: "Putt power",
-      value: this.puttPower,
-      onValue: (value) => {
-        this.puttPower = value;
+    if (!this.puttDice) {
+      const controls = this.createElement("div", "button-grid single-action");
+      this.addButton("Roll for Putt", () => {
+        this.puttDice = gameSession.rollPuttDice();
+        this.puttSlots = { aim: null, power: null };
+        this.selectedDieIndex = null;
+        this.renderOverlay();
         this.updateHud();
-      },
-    });
+      }, controls, "primary-action");
+      this.overlay.append(controls);
+      return;
+    }
+
+    this.renderDiceTiles(this.puttDice, this.puttSlots);
+    this.renderPuttAssignmentSlots();
 
     const controls = this.createElement("div", "button-grid single-action");
-    this.addButton("Release putt", () => this.releasePutt(), controls, "primary-action");
+    this.addButton("Release putt", () => this.releasePutt(), controls, "primary-action", !this.isPuttAllAssigned() || this.controlsLocked);
     this.overlay.append(controls);
+  }
+
+  private renderPuttAssignmentSlots() {
+    const dice = this.puttDice!;
+    const slots = this.puttSlots;
+    const container = this.createElement("div", "assignment-slots assignment-slots--putt");
+
+    const slotDefs: { key: keyof typeof slots; label: string; getValue: () => string }[] = [
+      {
+        key: "aim",
+        label: "AIM",
+        getValue: () => {
+          if (slots.aim === null) return "—";
+          const px = PUTT_AIM_DIAL_PX[dice[slots.aim] - 1];
+          return `${px > 0 ? "+" : ""}${px} px`;
+        },
+      },
+      {
+        key: "power",
+        label: "POWER",
+        getValue: () => slots.power === null ? "—" : `${Math.round(PUTT_POWER_DIAL[dice[slots.power] - 1] * 100)}%`,
+      },
+    ];
+
+    for (const { key, label, getValue } of slotDefs) {
+      const slot = this.createElement("div", slots[key] !== null ? "slot slot--filled" : "slot");
+      const labelEl = this.createElement("span", "slot-label");
+      labelEl.textContent = label;
+      const valueEl = this.createElement("span", "slot-value");
+      valueEl.textContent = getValue();
+      slot.append(labelEl, valueEl);
+
+      slot.addEventListener("click", () => {
+        if (slots[key] !== null) {
+          this.puttSlots[key] = null;
+          this.selectedDieIndex = null;
+        } else if (this.selectedDieIndex !== null) {
+          this.puttSlots[key] = this.selectedDieIndex;
+          this.selectedDieIndex = null;
+          this.drawCrosshair();
+        }
+        this.renderOverlay();
+        this.updateHud();
+      });
+      container.append(slot);
+    }
+    this.overlay.append(container);
   }
 
   private addStatusPanel(title: string, message: string) {
@@ -479,126 +655,7 @@ export class HoleScene extends Phaser.Scene {
     this.overlay.append(panel);
   }
 
-  private createReadout(label: string, value: string) {
-    const wrapper = this.createElement("div", "readout");
-    const labelNode = this.createElement("span", "readout-label");
-    labelNode.textContent = label;
-    const valueNode = this.createElement("span", "readout-value");
-    valueNode.textContent = value;
-    wrapper.append(labelNode, valueNode);
-    return wrapper;
-  }
 
-  private addPowerPad(options: { label: string; value: number; onValue: (value: number) => void }) {
-    const pad = this.createElement("div", "power-pad");
-    pad.setAttribute("role", "slider");
-    pad.setAttribute("aria-label", options.label);
-    pad.setAttribute("aria-valuemin", "25");
-    pad.setAttribute("aria-valuemax", "100");
-    pad.setAttribute("aria-valuenow", `${Math.round(options.value * 100)}`);
-
-    const label = this.createElement("div", "power-label");
-    label.textContent = `${options.label}: ${Math.round(options.value * 100)}%`;
-    const track = this.createElement("div", "power-track");
-    const fill = this.createElement("div", "power-fill");
-    fill.style.height = `${Math.round(options.value * 100)}%`;
-    const thumb = this.createElement("div", "power-thumb");
-    thumb.style.bottom = `${Math.round(options.value * 100)}%`;
-    const hint = this.createElement("div", "power-hint");
-    hint.textContent = "Drag up for more power";
-    track.append(fill, thumb);
-    pad.append(label, track, hint);
-
-    const updateFromClientY = (clientY: number) => {
-      const rect = track.getBoundingClientRect();
-      const nextValue = Phaser.Math.Clamp((rect.bottom - clientY) / rect.height, 0.25, 1);
-      options.onValue(nextValue);
-      this.syncLivePowerDisplay(options.label, nextValue);
-      label.textContent = `${options.label}: ${Math.round(nextValue * 100)}%`;
-      fill.style.height = `${Math.round(nextValue * 100)}%`;
-      thumb.style.bottom = `${Math.round(nextValue * 100)}%`;
-      pad.setAttribute("aria-valuenow", `${Math.round(nextValue * 100)}`);
-    };
-
-    pad.addEventListener("pointerdown", (event) => {
-      if (this.controlsLocked) {
-        return;
-      }
-      event.preventDefault();
-      event.stopPropagation();
-      pad.setPointerCapture(event.pointerId);
-      updateFromClientY(event.clientY);
-    });
-    pad.addEventListener("pointermove", (event) => {
-      if (this.controlsLocked || !pad.hasPointerCapture(event.pointerId)) {
-        return;
-      }
-      event.preventDefault();
-      event.stopPropagation();
-      updateFromClientY(event.clientY);
-    });
-
-    this.overlay.append(pad);
-  }
-
-  private syncLivePowerDisplay(label: string, value: number) {
-    const percent = `${Math.round(value * 100)}%`;
-
-    if (label === "Throw power") {
-      this.overlay.querySelectorAll(".readout").forEach((readout) => {
-        const readoutLabel = readout.querySelector(".readout-label")?.textContent?.trim();
-        if (readoutLabel === "Power") {
-          const readoutValue = readout.querySelector(".readout-value");
-          if (readoutValue) {
-            readoutValue.textContent = percent;
-          }
-        }
-      });
-    }
-
-    if (label === "Putt power") {
-      this.overlay.querySelectorAll("button").forEach((button) => {
-        if (button.textContent?.startsWith("Putt power:")) {
-          const nextLabel = `Putt power: ${percent}`;
-          button.textContent = nextLabel;
-          button.ariaLabel = nextLabel;
-        }
-      });
-    }
-  }
-
-  private updateDragReadouts() {
-    if (this.mode !== "setup") return;
-    const forecast = gameSession.forecastThrow(this.currentShotInput());
-    const powerPercent = `${Math.round(this.power * 100)}%`;
-
-    for (const readout of this.overlay.querySelectorAll<HTMLElement>(".readout")) {
-      const label = readout.querySelector(".readout-label")?.textContent?.trim();
-      const valueEl = readout.querySelector<HTMLElement>(".readout-value");
-      if (!valueEl) continue;
-      if (label === "Aim") valueEl.textContent = this.formatAimOffset();
-      if (label === "Power") valueEl.textContent = powerPercent;
-    }
-
-    const pad = this.overlay.querySelector<HTMLElement>(".power-pad");
-    if (pad) {
-      const fill = pad.querySelector<HTMLElement>(".power-fill");
-      const thumb = pad.querySelector<HTMLElement>(".power-thumb");
-      const padLabel = pad.querySelector<HTMLElement>(".power-label");
-      if (fill) fill.style.height = powerPercent;
-      if (thumb) thumb.style.bottom = powerPercent;
-      if (padLabel) padLabel.textContent = `Throw power: ${powerPercent}`;
-      pad.setAttribute("aria-valuenow", String(Math.round(this.power * 100)));
-    }
-
-    for (const row of this.overlay.querySelectorAll(".screen-state-row")) {
-      const label = row.querySelector("dt")?.textContent?.trim();
-      const dd = row.querySelector<HTMLElement>("dd");
-      if (!label || !dd) continue;
-      if (label === "Forecast") dd.textContent = this.previewLandingLabel(forecast);
-      if (label === "Risk") dd.textContent = this.previewRiskLabel(forecast);
-    }
-  }
 
   private createElement<K extends keyof HTMLElementTagNameMap>(tag: K, className: string) {
     const element = document.createElement(tag);
@@ -620,37 +677,7 @@ export class HoleScene extends Phaser.Scene {
   }
 
   private handleOverlayPowerDrag(_event: PointerEvent) {
-    // Power is set via the DOM power-pad control; canvas overlay drag is not used in landscape.
-  }
-
-  private handleDrag(pointer: Phaser.Input.Pointer) {
-    if (!pointer.isDown || this.controlsLocked) {
-      return;
-    }
-
-    if (this.mode === "putting") {
-      this.puttOffset = {
-        x: Phaser.Math.Clamp(pointer.x - this.layout.puttBasket.x, -88, 88),
-        y: Phaser.Math.Clamp(pointer.y - this.layout.puttBasket.y, -82, 82),
-      };
-      this.drawCrosshair();
-      this.updateHud();
-      return;
-    }
-
-    if (this.mode !== "setup") {
-      return;
-    }
-
-    // In landscape the hole runs horizontally; aim offset is controlled by vertical drag.
-    const { playLeft, playRight, playTop, playBottom, cy } = this.layout;
-    if (pointer.x >= playLeft && pointer.x <= playRight - 50 && pointer.y >= playTop && pointer.y <= playBottom) {
-      const dy = pointer.y - cy;
-      this.aimOffsetDegrees = Phaser.Math.Clamp(dy / 4, -42, 42);
-    }
-    this.updateAimLine();
-    this.updateHud();
-    this.updateDragReadouts();
+    // Input replaced by dice UI.
   }
 
   private throwDisc() {
@@ -662,6 +689,15 @@ export class HoleScene extends Phaser.Scene {
       return;
     }
 
+    if (!this.isAllAssigned() || !this.shotDice) return;
+
+    // Commit dice assignment to session then execute
+    gameSession.assignShotDice({
+      angleDie: this.shotDice[this.shotSlots.angle!] as DieValue,
+      powerDie: this.shotDice[this.shotSlots.power!] as DieValue,
+      windDie: this.shotDice[this.shotSlots.wind!] as DieValue,
+    });
+
     this.controlsLocked = true;
     this.mode = "flight";
     this.status = "Watch the landing before the next lie resolves.";
@@ -671,7 +707,7 @@ export class HoleScene extends Phaser.Scene {
     this.renderOverlay();
     this.updateHud();
 
-    const result = gameSession.throwDisc(this.currentShotInput());
+    const result = gameSession.throwDisc(this.disc, this.releaseAngle);
     this.lastResult = result;
     this.drawFlightPath(result);
     this.animateFlight(result, () => {
@@ -686,7 +722,7 @@ export class HoleScene extends Phaser.Scene {
         this.queuedThrowClicks = 0;
         this.time.delayedCall(650, () => {
           this.mode = "putting";
-          this.status = "Putting mode. Drag the crosshair on the basket and set putt power.";
+          this.status = "Putting mode. Roll dice, assign AIM and POWER, then release.";
           this.controlsLocked = false;
           this.enterPuttingView();
           this.updateHud();
@@ -697,6 +733,10 @@ export class HoleScene extends Phaser.Scene {
 
       this.mode = "setup";
       this.controlsLocked = false;
+      this.shotDice = null;
+      this.shotSlots = { angle: null, power: null, wind: null };
+      this.selectedDieIndex = null;
+      this.windClarity = 1.0;
       this.setSuggestedThrowDefaults();
       this.children.removeAll(true);
       this.drawSetupView();
@@ -712,25 +752,43 @@ export class HoleScene extends Phaser.Scene {
   }
 
   private releasePutt() {
-    if (this.controlsLocked) {
+    if (this.controlsLocked) return;
+
+    // Auto tap-in: no dice needed
+    if (isTapInAvailable(gameSession.holeState, gameSession.hole)) {
+      const result = gameSession.putt();
+      this.status = "Tap-in range. One stroke added automatically.";
+      this.finishPuttResult(result);
       return;
     }
 
-    const result = gameSession.putt({ aimOffset: this.puttOffset, power: this.puttPower });
-    this.status = result.autoTapIn
-      ? "Tap-in range. One stroke added automatically."
-      : result.made
-        ? "Chains caught it."
-        : result.missReason
-          ? `Missed: ${result.missReason}.`
-          : "Missed putt.";
+    if (!this.isPuttAllAssigned() || !this.puttDice) return;
 
-    // Auto-complete if a missed putt leaves the disc inside tap-in range
+    gameSession.assignPuttDice({
+      aimDie: this.puttDice[this.puttSlots.aim!] as DieValue,
+      powerDie: this.puttDice[this.puttSlots.power!] as DieValue,
+    });
+    this.puttDice = null;
+    this.puttSlots = { aim: null, power: null };
+    this.selectedDieIndex = null;
+
+    const result = gameSession.putt();
+    this.status = result.made
+      ? "Chains caught it."
+      : result.missReason
+        ? `Missed: ${result.missReason}.`
+        : "Missed putt.";
+
+    // Auto-complete if a missed putt leaves disc inside tap-in range
     if (!result.made && !gameSession.holeState.complete && isTapInAvailable(gameSession.holeState, gameSession.hole)) {
-      gameSession.putt({ aimOffset: { x: 0, y: 0 }, power: 0.5 });
+      gameSession.putt();
       this.status += " Tap-in — one more stroke added.";
     }
 
+    this.finishPuttResult(result);
+  }
+
+  private finishPuttResult(_result: { made: boolean; autoTapIn: boolean }) {
     if (this.mode === "putting") {
       this.children.removeAll(true);
       this.drawPuttingView();
@@ -755,11 +813,8 @@ export class HoleScene extends Phaser.Scene {
     const scoreLine = `${gameSession.selectedCharacter.name} | Strokes ${gameSession.holeState.strokes} | Par ${gameSession.hole.par}`;
 
     if (this.mode === "putting") {
-      this.hud?.setText(
-        `Putting view | ${scoreLine}\nPutt ${distance} ft | Wind ${wind.strength} @ ${wind.directionDegrees} deg | Power ${Math.round(
-          this.puttPower * 100,
-        )}%`,
-      );
+      const diceInfo = this.puttDice ? `Dice: [${this.puttDice.join(", ")}]` : "Roll for putt";
+      this.hud?.setText(`Putting view | ${scoreLine}\nPutt ${distance} ft | Wind ${wind.strength} @ ${wind.directionDegrees} deg | ${diceInfo}`);
       return;
     }
 
@@ -773,12 +828,11 @@ export class HoleScene extends Phaser.Scene {
       return;
     }
 
+    const diceInfo = this.shotDice
+      ? `Dice: [${this.shotDice.join(", ")}] | ${this.assignmentSummary()}`
+      : "Roll dice to shoot";
     this.hud?.setText(
-      `Throw setup | ${scoreLine}\n${distance} ft | Wind ${wind.strength} @ ${wind.directionDegrees} deg\n${describeDisc(
-        this.disc,
-      )} | ${describeAngle(this.releaseAngle)} | ${this.routeWindLabel(gameSession.forecastThrow(this.currentShotInput()))}\nAim ${Math.round(this.absoluteAimDegrees())} (${this.formatAimOffset()}) | Power ${Math.round(
-        this.power * 100,
-      )}%`,
+      `Throw setup | ${scoreLine}\n${distance} ft | Wind ${wind.strength} @ ${wind.directionDegrees} deg\n${describeDisc(this.disc)} | ${describeAngle(this.releaseAngle)}\n${diceInfo}`,
     );
     this.updateAimLine();
   }
@@ -788,8 +842,23 @@ export class HoleScene extends Phaser.Scene {
       return;
     }
 
+    const assignment = this.buildShotAssignment();
+    const input = diceToShotInput(assignment, this.basketBearingDegrees(), this.disc, this.releaseAngle);
+    const forecast = gameSession.forecastThrow(input);
+
+    // Update wind clarity and gate wind zone visuals
+    const windDieValue = this.shotSlots.wind !== null && this.shotDice
+      ? this.shotDice[this.shotSlots.wind] as DieValue
+      : 4 as DieValue;
+    this.windClarity = windClarityFromDie(windDieValue);
+    const zoneAlpha = this.windClarity <= 0 ? 0 : this.windClarity <= 0.4 ? 0.3 : this.windClarity <= 0.8 ? 0.6 : 1.0;
+    for (const obj of this.windZoneObjects) {
+      if ("setAlpha" in obj) {
+        (obj as unknown as Phaser.GameObjects.Components.Alpha).setAlpha(zoneAlpha);
+      }
+    }
+
     const start = this.worldToScreen(gameSession.holeState.lie);
-    const forecast = gameSession.forecastThrow(this.currentShotInput());
     const end = this.worldToScreen(forecast.likelyLanding);
     const zone = this.previewForecastZone(forecast);
     const pathVector = {
@@ -831,7 +900,8 @@ export class HoleScene extends Phaser.Scene {
     this.aimTarget?.setVisible(false);
     this.aimLabel?.setVisible(!forecast.reliefLikely);
     if (!forecast.reliefLikely) {
-      const labelOffsetY = this.aimOffsetDegrees >= 0 ? 48 : -48;
+      const angleOffset = this.shotSlots.angle !== null && this.shotDice ? ANGLE_DIAL_DEGREES[this.shotDice[this.shotSlots.angle] - 1] : 0;
+      const labelOffsetY = angleOffset >= 0 ? 48 : -48;
       const { playLeft, playRight, playTop, playBottom } = this.layout;
       this.aimLabel?.setPosition(
         Phaser.Math.Clamp(labelPoint.x, playLeft + 60, playRight - 60),
@@ -867,24 +937,27 @@ export class HoleScene extends Phaser.Scene {
     this.crosshairLines = [];
     this.puttGuide?.destroy();
 
-    const { cx, cy, playLeft, playTop } = this.layout;
+    const { cx, cy, playLeft } = this.layout;
     const PB = this.layout.puttBasket;
     const PT = this.layout.puttTee;
     const W = this.scale.width, H = this.scale.height;
 
     this.add.rectangle(cx, cy, W, H, 0x172419);
-    // Landscape green: center horizontal strip
-    this.add.rectangle(cx - 150, cy, W - 300, 220, 0x45612f);
-    this.add.rectangle(cx - 150, cy + 80, W - 300, 80, 0x25371f);
-    this.add.rectangle(cx - 150, cy, W - 300, H - 120, 0xf6f0d2, 0.04).setStrokeStyle(2, 0xd8c66a, 0.28);
-    this.add.circle(playLeft + 50, playTop + 60, 36, 0x5b3f8f, 0.45);
-    this.add.circle(playLeft + 200, playTop + 40, 28, 0x6a8732, 0.7);
+    // Putting green: textured grass strip (constrained so it doesn't bleed under the HUD)
+    const greenLeft = playLeft;
+    const greenRight = this.layout.playRight;
+    const greenWidth = greenRight - greenLeft;
+    const greenCx = (greenLeft + greenRight) / 2;
+    this.add.tileSprite(greenCx, cy, greenWidth, H - 120, "grass-tile");
+    this.add.rectangle(greenCx, cy, greenWidth, H - 120).setStrokeStyle(3, 0xd8c66a, 0.42);
+    this.add.tileSprite(greenCx, cy + 90, greenWidth, 80, "scramble-tile").setAlpha(0.32);
+    // Decorative trees behind/beside the green (kept within green bounds)
+    this.add.image(greenLeft + 40, this.layout.playTop + 30, "tree").setScale(0.95);
+    this.add.image(greenLeft + 130, this.layout.playTop + 18, "tree").setScale(0.72);
+    this.add.image(greenRight - 50, this.layout.playTop + 30, "tree").setScale(0.85);
 
-    // Basket structure
-    this.add.rectangle(PB.x, PB.y + 88, 8, 178, 0xd8c66a);
-    this.add.ellipse(PB.x, PB.y + 180, 96, 16, 0x11140f, 0.55);
-    this.add.ellipse(PB.x, PB.y - 20, 118, 36, 0xd8c66a, 0.18).setStrokeStyle(4, 0xd8c66a);
-    this.add.rectangle(PB.x, PB.y + 34, 86, 92, 0x10150f, 0.28).setStrokeStyle(3, 0xd8c66a);
+    // Basket sprite — sized to fit within the green
+    this.add.image(PB.x, PB.y + 20, "basket").setScale(1.15).setDepth(5);
     this.add
       .text(PB.x, PB.y - 78, "BASKET / CHAINS", {
         color: "#10150f",
@@ -894,18 +967,15 @@ export class HoleScene extends Phaser.Scene {
         backgroundColor: "#f6f0d2",
         padding: { x: 6, y: 3 },
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(7);
 
-    for (let index = 0; index < 6; index += 1) {
-      const x = PB.x - 34 + index * 13.5;
-      this.add.line(0, 0, x, PB.y - 8, x + 8, PB.y + 76, 0xf6f0d2, 0.55).setLineWidth(2);
-    }
-
-    // Tee marker
-    this.add.circle(PT.x, PT.y, 12, 0xe2d36c).setStrokeStyle(3, 0x1a1510);
-    this.add.rectangle(PT.x, PT.y + 26, 72, 12, 0xf6f0d2, 0.35);
+    // Tee marker + goblin at the putt lie
+    this.add.image(PT.x, PT.y + 12, "tee-marker").setScale(0.9).setDepth(3);
+    const tokenKey = characterTokenKey(gameSession.selectedCharacter.id);
+    this.add.image(PT.x, PT.y, tokenKey).setScale(0.9).setDepth(5);
     this.add
-      .text(PT.x, PT.y - 28, "PUTT LIE / DISC", {
+      .text(PT.x, PT.y - 36, "PUTT LIE / DISC", {
         color: "#10150f",
         fontFamily: "Trebuchet MS",
         fontSize: "12px",
@@ -913,26 +983,12 @@ export class HoleScene extends Phaser.Scene {
         backgroundColor: "#e2d36c",
         padding: { x: 6, y: 3 },
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(7);
 
-    // Info text in upper-right of play area
-    const infoX = Math.round(W * 0.72);
-    this.add
-      .text(infoX, H * 0.22, `${Math.round(gameSession.distanceToBasket)} ft putt`, {
-        color: "#f6f0d2",
-        fontFamily: "Trebuchet MS",
-        fontSize: "24px",
-      })
-      .setOrigin(0.5);
-    this.add
-      .text(infoX, H * 0.33, `Wind drift ${gameSession.wind.strength} @ ${gameSession.wind.directionDegrees} deg`, {
-        color: "#cfe4a4",
-        fontFamily: "Trebuchet MS",
-        fontSize: "16px",
-      })
-      .setOrigin(0.5);
+    // Distance + wind info now lives in the HUD overlay panel; no in-scene duplicate needed.
     const dragHint = this.add
-      .text(PB.x, PB.y + 130, "▶  Drag crosshair to aim  ◀", {
+      .text(PB.x, PB.y + 130, "▶  Assign AIM die to set aim  ◀", {
         color: "#10150f",
         fontFamily: "Trebuchet MS",
         fontSize: "14px",
@@ -1074,7 +1130,7 @@ export class HoleScene extends Phaser.Scene {
     const tracker = { t: 0 };
 
     this.flightDisc?.destroy();
-    this.flightDisc = this.add.circle(start.x, start.y, 7, 0xf6f0d2).setStrokeStyle(2, 0x1a1510);
+    this.flightDisc = this.add.image(start.x, start.y, discKey(this.disc)).setDepth(8);
     this.tweens.add({
       targets: tracker,
       t: 1,
@@ -1083,7 +1139,8 @@ export class HoleScene extends Phaser.Scene {
       onUpdate: () => {
         const point = curve.getPoint(tracker.t);
         this.flightDisc?.setPosition(point.x, point.y);
-        this.flightDisc?.setScale(1 + Math.sin(tracker.t * Math.PI) * 0.55, 1);
+        const arc = 1 + Math.sin(tracker.t * Math.PI) * 0.55;
+        this.flightDisc?.setScale(arc, arc * 0.85);
       },
       onComplete: () => {
         const finalPoint = result.reliefApplied ? this.worldToScreen(result.landing) : landing;
@@ -1091,8 +1148,8 @@ export class HoleScene extends Phaser.Scene {
           targets: this.flightDisc,
           x: finalPoint.x,
           y: finalPoint.y,
-          scaleX: 1,
-          scaleY: 1,
+          scaleX: 0.9,
+          scaleY: 0.75,
           duration: result.reliefApplied ? 360 : 120,
           ease: "Sine.easeOut",
           onComplete,
@@ -1109,8 +1166,11 @@ export class HoleScene extends Phaser.Scene {
 
     const PB = this.layout.puttBasket;
     const PT = this.layout.puttTee;
-    const x = PB.x + this.puttOffset.x;
-    const y = PB.y + this.puttOffset.y;
+    const puttAimPx = this.puttSlots.aim !== null && this.puttDice
+      ? PUTT_AIM_DIAL_PX[this.puttDice[this.puttSlots.aim] - 1]
+      : 0;
+    const x = PB.x + puttAimPx;
+    const y = PB.y;
     this.puttGuide = this.add.graphics();
     this.puttGuide.lineStyle(3, 0xf6f0d2, 0.5);
     this.puttGuide.beginPath();
@@ -1128,58 +1188,48 @@ export class HoleScene extends Phaser.Scene {
 
   private setSuggestedThrowDefaults() {
     const distance = gameSession.distanceToBasket;
-
-    this.aimOffsetDegrees = 0;
     this.releaseAngle = "flat";
-
-    if (distance > 470) {
-      this.disc = "driver";
-      this.power = 0.78;
-      this.aimOffsetDegrees = 0;
-      return;
-    }
-
     if (distance > 260) {
       this.disc = "driver";
-      this.power = 0.78;
-      return;
-    }
-
-    if (distance > 150) {
+    } else if (distance > 150) {
       this.disc = "midrange";
-      this.power = 0.6;
-      return;
+    } else {
+      this.disc = "putter";
     }
-
-    this.disc = "putter";
-    this.power = 0.52;
   }
 
-  private currentShotInput(): ShotInput {
+  private basketBearingDegrees(): number {
+    const lie = gameSession.holeState.lie;
+    const basket = gameSession.hole.basket;
+    return (Math.atan2(basket.y - lie.y, basket.x - lie.x) * 180) / Math.PI;
+  }
+
+  private buildShotAssignment(): ShotDiceAssignment {
+    const dice = this.shotDice;
+    const getValue = (slotIndex: number | null): DieValue =>
+      slotIndex !== null && dice ? dice[slotIndex] as DieValue : 4;
     return {
-      aimDegrees: this.absoluteAimDegrees(),
-      power: this.power,
-      releaseAngle: this.releaseAngle,
-      disc: this.disc,
+      angleDie: getValue(this.shotSlots.angle),
+      powerDie: getValue(this.shotSlots.power),
+      windDie: getValue(this.shotSlots.wind),
     };
   }
 
-  private absoluteAimDegrees() {
-    const lie = gameSession.holeState.lie;
-    const basket = gameSession.hole.basket;
-    const basketBearing = Phaser.Math.RadToDeg(Math.atan2(basket.y - lie.y, basket.x - lie.x));
-
-    return this.normalizeDegrees(basketBearing + this.aimOffsetDegrees);
+  private isAllAssigned(): boolean {
+    return this.shotSlots.angle !== null && this.shotSlots.power !== null && this.shotSlots.wind !== null;
   }
 
-  private normalizeDegrees(degrees: number) {
-    return ((((degrees + 180) % 360) + 360) % 360) - 180;
+  private isPuttAllAssigned(): boolean {
+    return this.puttSlots.aim !== null && this.puttSlots.power !== null;
   }
 
-  private formatAimOffset() {
-    const rounded = Math.round(this.aimOffsetDegrees);
-    if (rounded === 0) return "0°";
-    return `${Math.abs(rounded)}° ${rounded > 0 ? "R" : "L"}`;
+  private assignmentSummary(): string {
+    if (!this.shotDice) return "none";
+    const parts: string[] = [];
+    if (this.shotSlots.angle !== null) parts.push(`A:${this.shotDice[this.shotSlots.angle]}`);
+    if (this.shotSlots.power !== null) parts.push(`P:${this.shotDice[this.shotSlots.power]}`);
+    if (this.shotSlots.wind !== null) parts.push(`W:${this.shotDice[this.shotSlots.wind]}`);
+    return parts.length > 0 ? parts.join(" ") : "unassigned";
   }
 
   private previewLandingLabel(forecast: ShotForecast) {
@@ -1243,18 +1293,21 @@ export class HoleScene extends Phaser.Scene {
     return "Low - open lane";
   }
 
-  private routeWindLabel(forecast: ShotForecast) {
-    const strength = forecast.routeWind.strength.toFixed(1);
+  private routeWindLabel(forecast: ShotForecast, clarity = 1.0) {
     const zones = forecast.routeWindZones
       .map((id) => gameSession.hole.windZones?.find((zone) => zone.id === id)?.label)
       .filter((label): label is string => Boolean(label));
+    const zoneName = zones.length > 0 ? zones.join(" + ") : "Open air";
+
+    if (clarity <= 0) return `${zoneName} · hidden`;
+    if (clarity <= 0.4) return zoneName;
+
+    const strength = forecast.routeWind.strength;
+    const band = strength > 3 ? "strong" : strength > 1.5 ? "moderate" : "light";
+    if (clarity <= 0.8) return `${zoneName} · ${band}`;
+
     const effect = this.windEffectDescription(forecast);
-
-    if (zones.length === 0) {
-      return `Open air ${strength}${effect}`;
-    }
-
-    return `${zones.join(" + ")} ${strength}${effect}`;
+    return `${zoneName} ${strength.toFixed(1)}${effect}`;
   }
 
   private windEffectDescription(forecast: ShotForecast): string {

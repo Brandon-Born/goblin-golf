@@ -67,17 +67,21 @@ export class ScoreScene extends Phaser.Scene {
     const W = this.scale.width, H = this.scale.height;
     const cx = W / 2, cy = H / 2;
     this.add.rectangle(cx, cy, W, H, 0x18271b);
-    this.add.circle(cx, H * 0.22, 82, 0xe2d36c, 0.16).setStrokeStyle(4, 0xe2d36c, 0.72);
-    this.add.circle(cx - 540, H * 0.34, 44, 0x5b3f8f, 0.3);
-    this.add.circle(cx + 490, H * 0.78, 54, 0x6a8732, 0.34);
-    this.add.rectangle(cx, cy + 40, 280, 420, 0x2f5f2e, 0.54);
-    for (let y = H * 0.32; y <= H * 0.82; y += 42) {
-      this.add.rectangle(cx, y, 242, 8, 0x6a8732, 0.32);
-    }
-    // Brown shelf and disc props sit below the score card (card bottom = cy+30+210 = H*0.833)
-    this.add.rectangle(cx, H * 0.905, 338, 60, 0x786142, 0.74).setStrokeStyle(3, 0xaec76d, 0.62);
-    this.add.ellipse(cx - 114, H * 0.895, 46, 16, 0xf07b53, 0.92).setStrokeStyle(3, 0x10150f, 0.55);
-    this.add.ellipse(cx + 114, H * 0.895, 46, 16, 0xe2d36c, 0.92).setStrokeStyle(3, 0x10150f, 0.55);
+    // Soft circular glow behind the title
+    this.add.circle(cx, H * 0.22, 92, 0xe2d36c, 0.18).setStrokeStyle(4, 0xe2d36c, 0.72);
+    // Distant scenery to frame the card
+    this.add.image(cx - 540, H * 0.34, "tree").setScale(0.9).setAlpha(0.6);
+    this.add.image(cx + 490, H * 0.42, "tree").setScale(0.85).setAlpha(0.7);
+    this.add.image(cx - 480, H * 0.74, "ruins").setScale(0.9).setAlpha(0.85);
+    this.add.image(cx + 460, H * 0.78, "mushroom-spotted").setScale(1.1).setAlpha(0.92);
+    // Wooden shelf with three discs flanking the card (offset to sides so the bottom button doesn't cover them)
+    this.add.rectangle(cx - 380, H * 0.55, 200, 50, 0x786142).setStrokeStyle(3, 0xaec76d, 0.62);
+    this.add.rectangle(cx - 380, H * 0.538, 200, 3, 0xa88841);
+    this.add.image(cx - 420, H * 0.547, "disc-driver").setScale(1.3);
+    this.add.image(cx - 340, H * 0.547, "disc-midrange").setScale(1.3);
+    this.add.rectangle(cx + 380, H * 0.55, 120, 50, 0x786142).setStrokeStyle(3, 0xaec76d, 0.62);
+    this.add.rectangle(cx + 380, H * 0.538, 120, 3, 0xa88841);
+    this.add.image(cx + 380, H * 0.547, "disc-putter").setScale(1.3);
   }
 
   private drawScoreCard(strokes: number, headline: string) {

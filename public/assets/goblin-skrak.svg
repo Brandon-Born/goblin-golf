@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <defs>
+    <radialGradient id="skrakFace" cx="0.4" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#ff9e6e"/>
+      <stop offset="0.6" stop-color="#d96b3e"/>
+      <stop offset="1" stop-color="#6a2c12"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="60" cy="113" rx="40" ry="5" fill="#000" opacity="0.32"/>
+  <!-- Burly shoulders -->
+  <path d="M8 110 C16 78 36 70 60 70 C84 70 104 78 112 110 Z" fill="#5a2a18" stroke="#1a0a05" stroke-width="2.5"/>
+  <!-- Leather strap -->
+  <rect x="44" y="76" width="32" height="6" fill="#3a2515" stroke="#1a0a05" stroke-width="1.5"/>
+  <circle cx="60" cy="79" r="3" fill="#d8c66a" stroke="#1a0a05" stroke-width="1"/>
+  <!-- Head -->
+  <ellipse cx="60" cy="56" rx="36" ry="34" fill="url(#skrakFace)" stroke="#1a0a05" stroke-width="2.5"/>
+  <!-- Big ears, pierced -->
+  <path d="M22 50 L4 60 L20 70 Z" fill="#d96b3e" stroke="#1a0a05" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M98 50 L116 60 L100 70 Z" fill="#d96b3e" stroke="#1a0a05" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="14" cy="62" r="2" fill="#d8c66a" stroke="#1a0a05" stroke-width="1"/>
+  <circle cx="106" cy="62" r="2" fill="#d8c66a" stroke="#1a0a05" stroke-width="1"/>
+  <!-- Heavy brow -->
+  <path d="M30 48 Q45 38 56 50" stroke="#1a0a05" stroke-width="3" fill="none"/>
+  <path d="M64 50 Q75 38 90 48" stroke="#1a0a05" stroke-width="3" fill="none"/>
+  <!-- Wide eyes, intense -->
+  <ellipse cx="46" cy="58" rx="6" ry="5" fill="#fdf5d2" stroke="#1a0a05" stroke-width="1.8"/>
+  <ellipse cx="74" cy="58" rx="6" ry="5" fill="#fdf5d2" stroke="#1a0a05" stroke-width="1.8"/>
+  <circle cx="47" cy="59" r="3" fill="#a8472a"/>
+  <circle cx="75" cy="59" r="3" fill="#a8472a"/>
+  <circle cx="48" cy="58" r="1.2" fill="#1a0a05"/>
+  <circle cx="76" cy="58" r="1.2" fill="#1a0a05"/>
+  <!-- Broken/wide nose -->
+  <path d="M56 64 Q60 76 64 64 Q66 74 64 78" stroke="#1a0a05" stroke-width="1.8" fill="#b85c38"/>
+  <!-- Wide jagged grin -->
+  <path d="M40 82 Q60 92 80 82 L78 86 L72 84 L66 88 L60 84 L54 88 L48 84 L42 86 Z" fill="#1a0a05" stroke="#1a0a05" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- Tusks/fangs -->
+  <path d="M44 82 L42 92 L48 86 Z" fill="#fdf5d2" stroke="#1a0a05" stroke-width="1"/>
+  <path d="M76 82 L78 92 L72 86 Z" fill="#fdf5d2" stroke="#1a0a05" stroke-width="1"/>
+  <!-- Scar -->
+  <path d="M30 56 L36 72" stroke="#6a2c12" stroke-width="2"/>
+  <path d="M28 58 L30 60 M34 66 L36 68" stroke="#1a0a05" stroke-width="1"/>
+  <!-- Tooth necklace -->
+  <path d="M40 90 Q60 100 80 90" stroke="#3a2515" stroke-width="1.5" fill="none"/>
+  <path d="M52 96 L54 102 L56 96 Z" fill="#fdf5d2" stroke="#1a0a05" stroke-width="0.8"/>
+  <path d="M60 98 L62 104 L64 98 Z" fill="#fdf5d2" stroke="#1a0a05" stroke-width="0.8"/>
+  <path d="M68 96 L70 102 L72 96 Z" fill="#fdf5d2" stroke="#1a0a05" stroke-width="0.8"/>
+</svg>

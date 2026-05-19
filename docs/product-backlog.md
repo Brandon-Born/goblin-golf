@@ -374,28 +374,6 @@ Suggested next step:
 - Replace waits for `Disc in flight` text disappearance with a stronger scene-state or button-state poll.
 - Consider reducing worker count for animation-heavy e2e tests or increasing timeout only around known transition waits.
 
-### Missed-Putt E2E Test Expects Old Manual-Putt State
-
-Status: Open
-
-The tap-in-after-miss gameplay behavior now advances to the score screen, but `tests/e2e/prototype-flow.spec.ts` still expects a hole-scene `.status-panel` after clicking `Release putt` on a missed putt. This makes the documented `npm run test:e2e:server` verification fail even though the player-facing tap-in issue is fixed.
-
-Evidence:
-
-- `npm run test:e2e:server` failed on 2026-05-14: `missed putt returns a specific miss reason in the status panel`.
-- `npx playwright test tests/e2e/prototype-flow.spec.ts -g "missed putt" --project=desktop-chrome` failed in isolation with the same stale expectation.
-- Playwright error snapshot shows the page has advanced to the score scene with `Play again` visible.
-
-Impact:
-
-- The standard verification command reports a real red test.
-- Future fixes may be blocked or mistrusted because the suite no longer matches intended behavior.
-
-Suggested next step:
-
-- Update the missed-putt e2e test to expect score-summary completion when the miss lands inside tap-in range.
-- Add a separate test for non-tap-in missed putts if specific miss-reason status feedback still needs coverage.
-
 ### Score Screen Flavor Label Looks Like A Button
 
 Status: Resolved
@@ -426,36 +404,6 @@ Suggested next step:
 - Extend the ground/rough area to cover all prop positions, or push props inside the fairway boundary.
 - If props intentionally sit outside the fairway (as OB scenery), add a thin ground band to anchor them visually.
 
-### Power Pad Thumb Hit Target Is Too Small
-
-Status: Open
-
-The power-pad track is 32×44px and the thumb marker is only 4px tall (though 46px wide). On a touch device this gives a very small vertical drag target. Additionally the `Drag up for more power` hint text has `display: none` in CSS and never appears.
-
-Evidence:
-
-- `06-shot-setup.png` (agent visual audit, 2026-05-13)
-
-Suggested next step:
-
-- Increase track height to at least 64px.
-- Show the hint text on first visit or while the pad is idle.
-
-### Score Screen Backdrop Props Bleed Behind Card Border
-
-Status: Open
-
-Two decorative disc ellipses used as backdrop decoration are partially visible below the score card border, appearing as colored blobs behind the card's bottom edge. The layering makes the card bottom look unfinished.
-
-Evidence:
-
-- `12-after-putt.png` (agent visual audit, 2026-05-13)
-- `test-results/verify-complete/07-tapin-after-miss-score.png` and `test-results/visual-audit/06-score-summary.png` (verification, 2026-05-14): decorative disc ellipses are still partially visible below the score card and behind the `Play again` area.
-
-Suggested next step:
-
-- Clip or reposition the disc ellipses so they sit fully behind or fully outside the score card.
-
 ### Score Screen Hole Name Has Low Contrast Against Gold Circle
 
 Status: Resolved
@@ -469,32 +417,6 @@ Evidence:
 Suggested next step:
 
 - Use dark ink (`#10150f`) for the hole name text against the gold circle, or move the name outside the circle.
-
-### Title Screen Upper Area Is Visually Sparse
-
-Status: Open
-
-The title screen has a large empty zone above y=300 with only two small decorative circles. The dominant visual element between the `Goblin Golf` title and the basket illustration is a set of dark-green horizontal rectangles that take up significant space but carry no information.
-
-Evidence:
-
-- `01-title.png` (agent visual audit, 2026-05-13)
-
-Suggested next step:
-
-- Add the goblin trio, a course landscape thumbnail, or a short tagline in the upper zone.
-- Or tighten the vertical spacing so title and illustration feel like one composed unit.
-
-### Character Portraits Are Minimal Placeholder Geometry
-
-Status: Open
-
-All three goblin portraits are colored circles with ear triangles, dot eyes, and a mouth bar. No pose, equipment, or expression differentiates them. Stat bars distinguish them numerically but the portraits themselves carry no personality.
-
-Suggested next step:
-
-- Replace with pixel-art portraits that show posture, disc grip, or a character-specific prop.
-- At minimum add a unique silhouette per character so players recognize them at a glance.
 
 ### Stat Bars Are Hard To Read At Small Sizes
 
@@ -730,6 +652,36 @@ Suggested next step:
 - Consider lightweight DOM smoke assertions in `expectSetupStateReadouts` tied to CSS class names rather than display strings, so they survive label copy changes.
 
 ## Recently Resolved
+
+### Character Portraits Are Minimal Placeholder Geometry
+
+Status: Resolved
+
+The character select screen now uses distinct SVG portraits for Grib, Morga, and Skrak, with different silhouettes, expressions, and accessories.
+
+### Title Screen Upper Area Is Visually Sparse
+
+Status: Resolved
+
+The title scene now uses a composed storybook-style frame with a distant tree line, basket centerpiece, discs, ruins, mushrooms, and tee scenery.
+
+### Score Screen Backdrop Props Bleed Behind Card Border
+
+Status: Resolved
+
+The score screen decorative disc shelves were moved to flanking positions beside the card, so the props no longer bleed behind the score card border or `Play again` button.
+
+### Power Pad Thumb Hit Target Is Too Small
+
+Status: Resolved
+
+The old draggable power pad was removed when the dice mechanic shipped, so the small thumb hit-target issue is no longer applicable.
+
+### Missed-Putt E2E Test Expects Old Manual-Putt State
+
+Status: Resolved
+
+`tests/e2e/prototype-flow.spec.ts` now accepts immediate score-summary completion for tap-ins and still verifies manual miss status text when the hole remains in putting mode.
 
 ### HUD Screen-State Reduced From 8 Rows To 4
 

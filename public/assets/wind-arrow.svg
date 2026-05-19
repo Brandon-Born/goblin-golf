@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="16" viewBox="0 0 48 16">
+  <!-- Wisp tail -->
+  <path d="M2 8 Q12 4 22 8" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.6"/>
+  <path d="M6 12 Q16 8 26 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.45"/>
+  <!-- Arrow body -->
+  <path d="M20 4 L40 4 L40 0 L46 8 L40 16 L40 12 L20 12 Z" fill="currentColor" stroke="#10150f" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>
