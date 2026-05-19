@@ -1,10 +1,16 @@
-import { getDiscById } from "./data";
+import { ANGLE_DIAL_DEGREES, POWER_DIAL, PUTT_AIM_DIAL_PX, PUTT_POWER_DIAL, WIND_CLARITY_DIAL, getDiscById } from "./data";
 import type {
   Character,
+  DieValue,
   Disc,
+  DiscType,
   HoleConfig,
   HoleState,
   LieQuality,
+  PuttDiceAssignment,
+  PuttInput,
+  ReleaseAngle,
+  ShotDiceAssignment,
   ShotForecast,
   ShotInput,
   ShotResult,
@@ -15,6 +21,38 @@ import type {
 const DEG_TO_RAD = Math.PI / 180;
 const BASKET_CATCH_RADIUS = 8;
 const RELIEF_MARGIN = 6;
+
+export function rollDice(count: number, rng: () => number = Math.random): DieValue[] {
+  return Array.from({ length: count }, () => (Math.floor(rng() * 6) + 1) as DieValue);
+}
+
+export function diceToShotInput(
+  assignment: ShotDiceAssignment,
+  basketBearingDegrees: number,
+  disc: DiscType,
+  releaseAngle: ReleaseAngle,
+): ShotInput {
+  const angleOffset = ANGLE_DIAL_DEGREES[assignment.angleDie - 1];
+  const raw = basketBearingDegrees + angleOffset;
+  const aimDegrees = ((raw % 360) + 360) % 360;
+  return {
+    aimDegrees,
+    power: POWER_DIAL[assignment.powerDie - 1],
+    disc,
+    releaseAngle,
+  };
+}
+
+export function diceToPuttInput(assignment: PuttDiceAssignment): PuttInput {
+  return {
+    aimOffset: { x: PUTT_AIM_DIAL_PX[assignment.aimDie - 1], y: 0 },
+    power: PUTT_POWER_DIAL[assignment.powerDie - 1],
+  };
+}
+
+export function windClarityFromDie(dieValue: DieValue): number {
+  return WIND_CLARITY_DIAL[dieValue - 1];
+}
 
 export function createInitialHoleState(hole: HoleConfig): HoleState {
   return {

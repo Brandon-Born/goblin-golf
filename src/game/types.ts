@@ -115,3 +115,29 @@ export interface HoleState {
   complete: boolean;
   penaltyStrokes: number;
 }
+
+export type DieValue = 1 | 2 | 3 | 4 | 5 | 6;
+export type ShotDiceRoll = readonly [DieValue, DieValue, DieValue];
+export interface ShotDiceAssignment {
+  angleDie: DieValue;
+  powerDie: DieValue;
+  windDie: DieValue;
+}
+export type PuttDiceRoll = readonly [DieValue, DieValue];
+export interface PuttDiceAssignment {
+  aimDie: DieValue;
+  powerDie: DieValue;
+}
+
+export interface PuttInput {
+  aimOffset: Vector2;
+  power: number;
+}
+
+export interface PuttResult {
+  made: boolean;
+  autoTapIn: boolean;
+  landing: Vector2;
+  strokesAdded: number;
+  missReason?: string;
+}

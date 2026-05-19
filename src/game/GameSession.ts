@@ -1,13 +1,19 @@
 import Phaser from "phaser";
 import type {
   Character,
+  DieValue,
   DiscType,
   HoleState,
+  PuttDiceAssignment,
+  PuttDiceRoll,
+  PuttInput,
+  PuttResult,
   ReleaseAngle,
+  ShotDiceAssignment,
+  ShotDiceRoll,
   ShotInput,
   ShotForecast,
   ShotResult,
-  Vector2,
   Wind,
 } from "./types";
 import { CHARACTERS, DISCS, HOLE_1 } from "./data";
@@ -16,10 +22,13 @@ import {
   applyTapIn,
   calculateShotForecast,
   calculateShot,
+  diceToShotInput,
+  diceToPuttInput,
   distanceBetween,
   getStateLieQuality,
   isPuttingAvailable,
   isTapInAvailable,
+  rollDice,
   scoreRelativeToPar,
 } from "./logic";
 
@@ -29,19 +38,6 @@ const PROTOTYPE_WIND: Wind = {
 };
 
 export type ShotMode = "throw" | "putt" | "complete";
-
-export interface PuttInput {
-  aimOffset: Vector2;
-  power: number;
-}
-
-export interface PuttResult {
-  made: boolean;
-  autoTapIn: boolean;
-  landing: Vector2;
-  strokesAdded: number;
-  missReason?: string;
-}
 
 export class GameSession {
   selectedCharacter: Character = CHARACTERS[0];
@@ -55,6 +51,11 @@ export class GameSession {
 
   lastShot?: ShotResult;
   lastPutt?: PuttResult;
+
+  currentShotDice: ShotDiceRoll | null = null;
+  currentShotAssignment: ShotDiceAssignment | null = null;
+  currentPuttDice: PuttDiceRoll | null = null;
+  currentPuttAssignment: PuttDiceAssignment | null = null;
 
   get characters() {
     return CHARACTERS;
@@ -99,6 +100,10 @@ export class GameSession {
     };
     this.lastShot = undefined;
     this.lastPutt = undefined;
+    this.currentShotDice = null;
+    this.currentShotAssignment = null;
+    this.currentPuttDice = null;
+    this.currentPuttAssignment = null;
   }
 
   selectCharacter(characterId: string) {
@@ -109,33 +114,76 @@ export class GameSession {
     this.reset(character);
   }
 
-  throwDisc(input: ShotInput) {
-    const result = calculateShot(this.holeState, this.selectedCharacter, HOLE_1, PROTOTYPE_WIND, input);
-
-    this.holeState = applyShotResult(this.holeState, HOLE_1, result);
-    this.lastShot = result;
-    return result;
+  rollShotDice(): ShotDiceRoll {
+    const override = typeof window !== "undefined" ? (window as unknown as Record<string, unknown>).__forceDice as number[] | undefined : undefined;
+    const raw = override ? override.slice(0, 3) : rollDice(3);
+    const dice: ShotDiceRoll = [
+      Math.max(1, Math.min(6, raw[0])) as DieValue,
+      Math.max(1, Math.min(6, raw[1])) as DieValue,
+      Math.max(1, Math.min(6, raw[2])) as DieValue,
+    ];
+    this.currentShotDice = dice;
+    this.currentShotAssignment = null;
+    return dice;
   }
 
-  previewThrow(input: ShotInput) {
-    return this.forecastThrow(input);
+  rollPuttDice(): PuttDiceRoll {
+    const override = typeof window !== "undefined" ? (window as unknown as Record<string, unknown>).__forcePuttDice as number[] | undefined : undefined;
+    const raw = override ? override.slice(0, 2) : rollDice(2);
+    const dice: PuttDiceRoll = [
+      Math.max(1, Math.min(6, raw[0])) as DieValue,
+      Math.max(1, Math.min(6, raw[1])) as DieValue,
+    ];
+    this.currentPuttDice = dice;
+    this.currentPuttAssignment = null;
+    return dice;
+  }
+
+  assignShotDice(assignment: ShotDiceAssignment) {
+    if (!this.currentShotDice) {
+      throw new Error("No shot dice rolled. Call rollShotDice() first.");
+    }
+    this.currentShotAssignment = assignment;
+  }
+
+  assignPuttDice(assignment: PuttDiceAssignment) {
+    if (!this.currentPuttDice) {
+      throw new Error("No putt dice rolled. Call rollPuttDice() first.");
+    }
+    this.currentPuttAssignment = assignment;
+  }
+
+  throwDisc(disc: DiscType, releaseAngle: ReleaseAngle): ShotResult {
+    if (!this.currentShotAssignment) {
+      throw new Error("No shot dice assigned. Call assignShotDice() first.");
+    }
+    const input = diceToShotInput(this.currentShotAssignment, this.basketBearingDegrees(), disc, releaseAngle);
+    const result = calculateShot(this.holeState, this.selectedCharacter, HOLE_1, PROTOTYPE_WIND, input);
+    this.holeState = applyShotResult(this.holeState, HOLE_1, result);
+    this.lastShot = result;
+    this.currentShotDice = null;
+    this.currentShotAssignment = null;
+    return result;
   }
 
   forecastThrow(input: ShotInput): ShotForecast {
     return calculateShotForecast(this.holeState, this.selectedCharacter, HOLE_1, PROTOTYPE_WIND, input);
   }
 
-  putt(input: PuttInput) {
+  putt(input?: PuttInput): PuttResult {
     const autoTapIn = isTapInAvailable(this.holeState, HOLE_1);
 
-    const result = autoTapIn
-      ? ({
-          made: true,
-          autoTapIn: true,
-          landing: { ...HOLE_1.basket },
-          strokesAdded: 1,
-        } satisfies PuttResult)
-      : this.resolveManualPutt(input);
+    let resolvedInput: PuttInput | null = null;
+    if (!autoTapIn) {
+      resolvedInput = input ?? (this.currentPuttAssignment ? diceToPuttInput(this.currentPuttAssignment) : null);
+      if (!resolvedInput) {
+        throw new Error("No putt input: provide PuttInput directly or assign putt dice first.");
+      }
+    }
+
+    const result: PuttResult = autoTapIn
+      ? { made: true, autoTapIn: true, landing: { ...HOLE_1.basket }, strokesAdded: 1 }
+      : this.resolveManualPutt(resolvedInput!);
 
     this.holeState = result.autoTapIn
       ? applyTapIn(this.holeState, HOLE_1)
@@ -146,6 +194,8 @@ export class GameSession {
           complete: result.made,
         };
     this.lastPutt = result;
+    this.currentPuttDice = null;
+    this.currentPuttAssignment = null;
     return result;
   }
 
@@ -156,6 +206,10 @@ export class GameSession {
     }
 
     return relative > 0 ? `+${relative}` : `${relative}`;
+  }
+
+  private basketBearingDegrees(): number {
+    return (Math.atan2(HOLE_1.basket.y - this.holeState.lie.y, HOLE_1.basket.x - this.holeState.lie.x) * 180) / Math.PI;
   }
 
   private resolveManualPutt(input: PuttInput): PuttResult {

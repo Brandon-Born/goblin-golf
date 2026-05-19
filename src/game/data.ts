@@ -103,6 +103,12 @@ export const HOLE_1: HoleConfig = {
   ],
 };
 
+export const ANGLE_DIAL_DEGREES = [-42, -25, -8, 8, 25, 42] as const;
+export const POWER_DIAL = [0.25, 0.4, 0.55, 0.7, 0.85, 1.0] as const;
+export const WIND_CLARITY_DIAL = [0, 0.2, 0.4, 0.6, 0.8, 1.0] as const;
+export const PUTT_AIM_DIAL_PX = [-80, -48, -16, 16, 48, 80] as const;
+export const PUTT_POWER_DIAL = [0.3, 0.45, 0.6, 0.75, 0.9, 1.0] as const;
+
 export function getCharacterById(id: string): Character | undefined {
   return CHARACTERS.find((character) => character.id === id);
 }
