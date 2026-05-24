@@ -55,6 +55,10 @@ export class HoleScene extends Phaser.Scene {
   private selectedDieIndex: number | null = null;
   private windClarity = 1.0;
 
+  // Dice-roll animation timers (cleared when a new roll starts or the scene tears down)
+  private rollCycleTimer?: number;
+  private rollSettleTimers: number[] = [];
+
   constructor() {
     super("HoleScene");
   }
@@ -104,6 +108,7 @@ export class HoleScene extends Phaser.Scene {
   }
 
   shutdown() {
+    this.clearRollAnimation();
     this.clearOverlay();
   }
 
@@ -435,6 +440,7 @@ export class HoleScene extends Phaser.Scene {
         this.shotSlots = { angle: null, power: null, wind: null };
         this.selectedDieIndex = null;
         this.renderOverlay();
+        this.animateDiceRoll(this.shotDice);
         this.updateAimLine();
         this.updateHud();
       }, controls, "primary-action");
@@ -461,6 +467,67 @@ export class HoleScene extends Phaser.Scene {
     }, controls);
     this.addButton("Throw disc", () => this.throwDisc(), controls, "primary-action", !allAssigned || this.controlsLocked);
     this.overlay.append(controls);
+  }
+
+  /**
+   * Play the tumble-and-settle dice roll animation on the freshly rendered tiles.
+   * Each die rapidly cycles random pip values, then settles to its real face with a
+   * staggered "thump." Safe to call after re-render: existing timers are cleared first.
+   */
+  private animateDiceRoll(dice: ReadonlyArray<number>) {
+    this.clearRollAnimation();
+
+    const dieElements = Array.from(this.overlay.querySelectorAll(".die")) as HTMLButtonElement[];
+    if (dieElements.length === 0) return;
+    const tray = this.overlay.querySelector(".dice-display") as HTMLDivElement | null;
+    tray?.classList.add("dice-display--rolling");
+
+    for (const die of dieElements) {
+      die.classList.add("die--rolling");
+      die.classList.remove("die--selected");
+    }
+
+    // Rapidly cycle displayed pip values for that "kinetic" tumble feel.
+    this.rollCycleTimer = window.setInterval(() => {
+      for (const die of dieElements) {
+        if (die.classList.contains("die--rolling")) {
+          die.textContent = String(Math.floor(Math.random() * 6) + 1);
+        }
+      }
+    }, 60);
+
+    const baseDelay = 460;
+    const stagger = 130;
+    dieElements.forEach((die, index) => {
+      const settleAt = baseDelay + index * stagger;
+      const settleTimer = window.setTimeout(() => {
+        die.classList.remove("die--rolling");
+        die.classList.add("die--settled");
+        die.textContent = String(dice[index]);
+        const clearTimer = window.setTimeout(() => die.classList.remove("die--settled"), 320);
+        this.rollSettleTimers.push(clearTimer);
+      }, settleAt);
+      this.rollSettleTimers.push(settleTimer);
+    });
+
+    const totalDuration = baseDelay + (dieElements.length - 1) * stagger + 80;
+    const stopTimer = window.setTimeout(() => {
+      if (this.rollCycleTimer !== undefined) {
+        window.clearInterval(this.rollCycleTimer);
+        this.rollCycleTimer = undefined;
+      }
+      tray?.classList.remove("dice-display--rolling");
+    }, totalDuration);
+    this.rollSettleTimers.push(stopTimer);
+  }
+
+  private clearRollAnimation() {
+    if (this.rollCycleTimer !== undefined) {
+      window.clearInterval(this.rollCycleTimer);
+      this.rollCycleTimer = undefined;
+    }
+    for (const id of this.rollSettleTimers) window.clearTimeout(id);
+    this.rollSettleTimers = [];
   }
 
   private renderDiceTiles(
@@ -568,6 +635,7 @@ export class HoleScene extends Phaser.Scene {
         this.puttSlots = { aim: null, power: null };
         this.selectedDieIndex = null;
         this.renderOverlay();
+        this.animateDiceRoll(this.puttDice);
         this.updateHud();
       }, controls, "primary-action");
       this.overlay.append(controls);
