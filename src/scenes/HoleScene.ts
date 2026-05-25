@@ -91,6 +91,18 @@ export class HoleScene extends Phaser.Scene {
   create() {
     this.layout = this.computeLayout();
     this.clearOverlay();
+    // Scene instances persist across scene.start("HoleScene"), so explicitly
+    // reset transient per-hole state when we enter a new hole.
+    this.shotDice = null;
+    this.shotSlots = { angle: null, power: null, wind: null };
+    this.puttDice = null;
+    this.puttSlots = { aim: null, power: null };
+    this.selectedDieIndex = null;
+    this.controlsLocked = false;
+    this.queuedThrowClicks = 0;
+    this.lastResult = undefined;
+    this.windClarity = 1.0;
+    this.status = this.defaultStatus;
     this.mode = gameSession.mode === "putt" ? "putting" : "setup";
     if (this.mode === "setup") {
       this.setSuggestedThrowDefaults();
@@ -151,22 +163,7 @@ export class HoleScene extends Phaser.Scene {
     this.drawBasketIcon(basket.x + 6, basket.y - 4, 0.5);
 
     this.drawScrambleZoneBoundaries();
-    const hazard1 = this.worldToScreen({ x: 265, y: 76 });
-    const hazard2 = this.worldToScreen({ x: 450, y: 278 });
-    this.add.image(hazard1.x, hazard1.y, "ruins").setScale(0.85).setDepth(4);
-    this.add.image(hazard2.x, hazard2.y, "ruins").setScale(0.85).setDepth(4);
-    this.drawHazardLabel(hazard1.x, hazard1.y + 38, "RUINS", "SCRAMBLE LIE");
-    this.drawHazardLabel(hazard2.x, hazard2.y + 38, "RUINS", "SCRAMBLE LIE");
-
-    const mush1 = this.worldToScreen({ x: 200, y: 265 });
-    const mush2 = this.worldToScreen({ x: 680, y: 80 });
-    this.add.image(mush1.x, mush1.y, "mushroom-red").setScale(0.85).setDepth(4);
-    this.add.image(mush2.x, mush2.y, "mushroom-spotted").setScale(0.85).setDepth(4);
-
-    // Decorative trees in OB strips to fill the negative space
-    this.add.image(this.worldToScreen({ x: 90, y: 50 }).x, this.worldToScreen({ x: 90, y: 50 }).y, "tree").setScale(0.7).setDepth(3);
-    this.add.image(this.worldToScreen({ x: 800, y: 290 }).x, this.worldToScreen({ x: 800, y: 290 }).y, "tree").setScale(0.7).setDepth(3);
-    this.add.image(this.worldToScreen({ x: 540, y: 36 }).x, this.worldToScreen({ x: 540, y: 36 }).y, "tree").setScale(0.55).setDepth(3);
+    this.drawScenery();
 
     // Goblin token at the current lie
     const tokenKey = characterTokenKey(gameSession.selectedCharacter.id);
@@ -256,24 +253,35 @@ export class HoleScene extends Phaser.Scene {
   }
 
   private drawScrambleZoneBoundaries() {
-    const bounds = gameSession.hole.bounds;
-    const centerY = bounds.y + bounds.height / 2;
-    // Mirror the scramble zone rectangles from getLieQuality() in logic.ts
-    const zones = [
-      { wx: bounds.x + 172, wy: centerY - 144, ww: 90, wh: 80 },
-      { wx: bounds.x + 352, wy: centerY + 70, ww: 100, wh: 68 },
-      { wx: bounds.x + 552, wy: centerY - 144, ww: 90, wh: 80 },
-    ];
+    const zones = gameSession.hole.scrambleZones ?? [];
+    if (zones.length === 0) return;
     const graphics = this.add.graphics().setDepth(2);
     graphics.lineStyle(2, 0xff8f6b, 0.72);
     graphics.fillStyle(0xff8f6b, 0.08);
-    for (const { wx, wy, ww, wh } of zones) {
-      const tl = this.worldToScreen({ x: wx, y: wy });
-      const br = this.worldToScreen({ x: wx + ww, y: wy + wh });
+    for (const zone of zones) {
+      const tl = this.worldToScreen({ x: zone.rect.x, y: zone.rect.y });
+      const br = this.worldToScreen({
+        x: zone.rect.x + zone.rect.width,
+        y: zone.rect.y + zone.rect.height,
+      });
       const sw = br.x - tl.x;
       const sh = br.y - tl.y;
       graphics.fillRect(tl.x, tl.y, sw, sh);
       graphics.strokeRect(tl.x, tl.y, sw, sh);
+    }
+  }
+
+  /** Render decorative scenery (ruins, mushrooms, trees) declared by the hole config.
+   *  Ruins additionally get a tiny "SCRAMBLE LIE" label since they sit on hazard zones
+   *  by convention. Trees and mushrooms render label-free. */
+  private drawScenery() {
+    for (const prop of gameSession.hole.scenery ?? []) {
+      const { x, y } = this.worldToScreen({ x: prop.x, y: prop.y });
+      const scale = prop.scale ?? 0.85;
+      this.add.image(x, y, prop.sprite).setScale(scale).setDepth(prop.sprite === "tree" ? 3 : 4);
+      if (prop.sprite === "ruins") {
+        this.drawHazardLabel(x, y + 38, "RUINS", "SCRAMBLE LIE");
+      }
     }
   }
 
@@ -336,18 +344,11 @@ export class HoleScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.drawWindZones();
 
-    // Decorative scenery — ruins and mushrooms
-    for (const [wx, wy] of [[280, 90], [550, 288], [430, 74], [720, 274]]) {
-      const { x, y } = this.worldToScreen({ x: wx, y: wy });
-      this.add.image(x, y, "ruins").setScale(0.62).setDepth(3);
-    }
-    for (const [wx, wy, redCap] of [[200, 270, 1], [650, 90, 0], [350, 74, 1], [750, 274, 0]] as const) {
-      const { x, y } = this.worldToScreen({ x: wx, y: wy });
-      this.add.image(x, y, redCap ? "mushroom-red" : "mushroom-spotted").setScale(0.6).setDepth(4);
-    }
-    for (const [wx, wy] of [[180, 84], [330, 282], [490, 78]]) {
-      const { x, y } = this.worldToScreen({ x: wx, y: wy });
-      this.add.image(x, y, "tree").setScale(0.55).setDepth(3);
+    // Render the hole's actual scenery at reduced scale (flight view is more zoomed-out feel)
+    for (const prop of gameSession.hole.scenery ?? []) {
+      const { x, y } = this.worldToScreen({ x: prop.x, y: prop.y });
+      const baseScale = prop.scale ?? 0.85;
+      this.add.image(x, y, prop.sprite).setScale(baseScale * 0.75).setDepth(prop.sprite === "tree" ? 3 : 4);
     }
 
     const basket = this.worldToScreen(gameSession.hole.basket);
@@ -866,6 +867,10 @@ export class HoleScene extends Phaser.Scene {
     }
 
     if (gameSession.holeState.complete) {
+      // Push the result into the scorecard and advance the index. ScoreScene
+      // then reads from gameSession.holeScores to render either an intermission
+      // or the final scorecard.
+      gameSession.advanceHole();
       this.clearOverlay();
       this.scene.start("ScoreScene");
       return;

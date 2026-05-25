@@ -176,7 +176,7 @@ async function startHole(page: Page, goblin = "Morga Mosswhack") {
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
-test("landscape player flow reaches the score summary with fresh scene controls", async ({ page }) => {
+test("hole 1 completion lands on the intermission scorecard and advances to hole 2", async ({ page }) => {
   await startHole(page);
   await expectSetupStateReadouts(page);
 
@@ -189,15 +189,16 @@ test("landscape player flow reaches the score summary with fresh scene controls"
 
   await completeHoleFromPutting(page);
 
+  // After hole 1 the player sees the intermission scorecard with a "Tee off Hole 2"
+  // CTA. "Play again" only appears after the full 9-hole round.
   await expectOnlyScene(page, "score");
   await expect(page.getByRole("button", { name: "Release putt" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Play again" })).toBeVisible();
-
-  await page.getByRole("button", { name: "Play again" }).click();
-  await expectOnlyScene(page, "title");
-  await expect(page.getByRole("button", { name: "Start round" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Tee off Hole 2" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Play again" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Release putt" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Tee off Hole 2" }).click();
+  await expectOnlyScene(page, "hole");
+  await expectSetupStateReadouts(page);
 });
 
 test("shot setup exposes playtest-critical state and dice assignment feedback", async ({ page }) => {
@@ -320,14 +321,15 @@ test("putting mode replaces shot setup with a distinct basket-focused view", asy
   }
 });
 
-test("manual putt make from putting mode reaches score summary", async ({ page }) => {
+test("manual putt make from putting mode reaches the intermission scorecard", async ({ page }) => {
   await startHole(page, "Morga Mosswhack");
 
   await throwUntilPutting(page);
   await completeHoleFromPutting(page);
 
   await expectOnlyScene(page, "score");
-  await expect(page.getByRole("button", { name: "Play again" })).toBeVisible();
+  // The intermission scorecard shows a "Tee off Hole 2" CTA after hole 1.
+  await expect(page.getByRole("button", { name: "Tee off Hole 2" })).toBeVisible();
 });
 
 test("flight mode shows Watch the flight button disabled instead of an active Throw disc button", async ({ page }) => {

@@ -142,6 +142,7 @@ test("visual audit of the playable prototype", async ({ page }) => {
     }
   }
 
-  await expect(page.getByRole("button", { name: "Play again" })).toBeVisible();
+  // After hole 1 the player lands on the intermission scorecard, not the final.
+  await expect(page.getByRole("button", { name: "Tee off Hole 2" })).toBeVisible();
   await page.screenshot({ path: "test-results/visual-audit/06-score-summary.png", fullPage: true });
 });

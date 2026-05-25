@@ -230,19 +230,22 @@ export function getLieQuality(lie: Vector2, hole: HoleConfig): LieQuality {
     return "relief";
   }
 
+  for (const zone of hole.scrambleZones ?? []) {
+    if (
+      lie.x >= zone.rect.x &&
+      lie.x <= zone.rect.x + zone.rect.width &&
+      lie.y >= zone.rect.y &&
+      lie.y <= zone.rect.y + zone.rect.height
+    ) {
+      return "scramble";
+    }
+  }
+
   const top = hole.bounds.y;
   const bottom = hole.bounds.y + hole.bounds.height;
   const centerY = hole.bounds.y + hole.bounds.height / 2;
   const fairwayHalfHeight = hole.bounds.height * 0.28;
   const edgeBuffer = hole.bounds.height * 0.16;
-
-  if (
-    isInZone(lie, hole.bounds.x + 172, centerY - 144, 90, 80) ||
-    isInZone(lie, hole.bounds.x + 352, centerY + 70, 100, 68) ||
-    isInZone(lie, hole.bounds.x + 552, centerY - 144, 90, 80)
-  ) {
-    return "scramble";
-  }
 
   if (
     Math.abs(lie.y - centerY) <= fairwayHalfHeight &&

@@ -38,10 +38,35 @@ export interface Wind {
   strength: number;
 }
 
+export interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface WindZone extends Wind {
   id: string;
   label: string;
-  rect: { x: number; y: number; width: number; height: number };
+  rect: Rect;
+}
+
+export interface ScrambleZone {
+  id: string;
+  rect: Rect;
+}
+
+export type ScenicSprite =
+  | "tree"
+  | "mushroom-red"
+  | "mushroom-spotted"
+  | "ruins";
+
+export interface ScenicProp {
+  x: number;
+  y: number;
+  sprite: ScenicSprite;
+  scale?: number;
 }
 
 export interface HoleConfig {
@@ -50,11 +75,16 @@ export interface HoleConfig {
   par: number;
   tee: Vector2;
   basket: Vector2;
-  bounds: { x: number; y: number; width: number; height: number };
+  bounds: Rect;
   reliefPoint: Vector2;
   puttingRange: number;
   tapInRange: number;
   windZones?: readonly WindZone[];
+  scrambleZones?: readonly ScrambleZone[];
+  /** Decorative sprites placed in world coordinates. Includes hazard visuals (ruins,
+   *  mushrooms) and pure scenery (trees). Position-only; gameplay impact comes
+   *  from scrambleZones / windZones, not from these props. */
+  scenery?: readonly ScenicProp[];
 }
 
 export interface ShotInput {
