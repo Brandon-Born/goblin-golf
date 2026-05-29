@@ -354,9 +354,9 @@ Suggested next step:
 
 ### Parallel Playwright Runs Can Be Timing-Sensitive
 
-Status: Open
+Status: Resolved
 
-During QA playtests, default parallel Playwright runs intermittently timed out around `Disc in flight` and putting transitions, while the same flows passed in isolation or with fewer workers. The QA lead's final full-suite run passed, so this appears timing-sensitive rather than deterministic.
+During QA playtests, default parallel Playwright runs intermittently timed out around `Disc in flight` and putting transitions, while the same flows passed in isolation or with fewer workers. The QA lead's final full-suite run passed, so this appeared timing-sensitive rather than deterministic.
 
 Evidence:
 
@@ -364,15 +364,12 @@ Evidence:
 - Tester B report, 2026-05-14: default parallel run failed 4/12, `npx playwright test tests/e2e/prototype-flow.spec.ts --workers=1` passed.
 - QA lead rerun, 2026-05-14: `npx playwright test` passed 12/12.
 
-Impact:
+Resolution (2026-05-29):
 
-- The documented verification command may produce false red runs under load.
-- Timing flakes can hide real gameplay regressions.
+- Flight-transition waits no longer match the transient `Disc in flight` status text (whose DOM node is destroyed and rebuilt on every overlay re-render). The shared `waitForFlightToResolve` helper polls the stable, persistent `[data-scene='hole']` overlay element for its mode CSS class instead, waiting for `hole-controls--flight` to clear. This also covers the putting transition, which intentionally holds the flight class through a short delay before flipping to `--putting`.
+- Transition timeouts were widened (7s → 10s) and the cold-boot title wait in `startHole` (10s → 20s) to absorb dev-server contention when many workers cold-load Phaser at once.
 
-Suggested next step:
-
-- Replace waits for `Disc in flight` text disappearance with a stronger scene-state or button-state poll.
-- Consider reducing worker count for animation-heavy e2e tests or increasing timeout only around known transition waits.
+If flakes ever resurface under heavier load, the next lever is capping `workers` in `playwright.config.ts` for the animation-heavy suite.
 
 ### Score Screen Flavor Label Looks Like A Button
 

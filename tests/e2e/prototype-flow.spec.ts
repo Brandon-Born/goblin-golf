@@ -73,13 +73,29 @@ async function targetDistance(page: Page) {
   return Number(value);
 }
 
+/**
+ * Wait for an in-progress flight to resolve. The hole overlay carries its mode
+ * as a CSS class on a stable, persistent element (`hole-controls--flight` while
+ * the disc is airborne, then `--setup`/`--putting` once the lie resolves). The
+ * putting transition deliberately stays in flight mode through a short delay
+ * before flipping to `--putting`, so waiting for the flight class to clear
+ * covers both outcomes. Polling this class is far more robust under parallel
+ * load than matching the transient "Disc in flight" status text, whose node is
+ * torn down and rebuilt on every overlay re-render.
+ */
+async function waitForFlightToResolve(page: Page) {
+  // Confirm the throw registered and the disc is actually airborne first, so the
+  // "no longer flight" assertion can't pass instantly against the setup state.
+  await expect(holeScene(page)).toHaveClass(/hole-controls--flight/);
+  await expect(holeScene(page)).not.toHaveClass(/hole-controls--flight/, { timeout: 10_000 });
+}
+
 async function throwDiscAndWaitForLie(page: Page, forceDice?: [number, number, number]) {
   await rollAndAssignShot(page, forceDice);
   const throwDisc = page.getByRole("button", { name: "Throw disc" });
   await expect(throwDisc).toBeEnabled();
   await throwDisc.click();
-  await expect(page.getByText("Disc in flight")).toBeVisible();
-  await expect(page.getByText("Disc in flight")).toHaveCount(0, { timeout: 7000 });
+  await waitForFlightToResolve(page);
 }
 
 async function waitForNextThrowOrPutt(page: Page) {
@@ -154,7 +170,9 @@ async function completeHoleFromPutting(page: Page) {
 async function startHole(page: Page, goblin = "Morga Mosswhack") {
   await page.goto("/");
   await page.waitForLoadState("domcontentloaded");
-  await expect(page.getByRole("button", { name: "Start round" })).toBeVisible({ timeout: 10000 });
+  // Cold Phaser boot can be slow when many parallel workers hit the dev server
+  // at once; this only costs wall-clock time on a genuine failure.
+  await expect(page.getByRole("button", { name: "Start round" })).toBeVisible({ timeout: 20_000 });
 
   await expect(canvas(page)).toBeVisible();
   await expect(canvas(page)).toHaveJSProperty("width", 1280);
@@ -347,7 +365,7 @@ test("flight mode shows Watch the flight button disabled instead of an active Th
   await expect(page.getByRole("button", { name: "Throw disc" })).toHaveCount(0);
 
   // After flight resolves, Roll Dice returns (setup mode)
-  await expect(page.getByText("Disc in flight")).toHaveCount(0, { timeout: 7000 });
+  await expect(holeScene(page)).not.toHaveClass(/hole-controls--flight/, { timeout: 10_000 });
   await expect(page.getByRole("button", { name: "Roll Dice" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Watch the flight…" })).toHaveCount(0);
 });
