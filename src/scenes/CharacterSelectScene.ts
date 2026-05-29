@@ -133,20 +133,24 @@ export class CharacterSelectScene extends Phaser.Scene {
     stats.forEach(([label, value], index) => {
       const [x, y] = positions[index];
       container.add(
-        this.add.rectangle(x, y, 98, 22, 0x111a12, 0.74).setStrokeStyle(1, 0x719159, 0.72),
+        this.add.rectangle(x, y, 98, 26, 0x111a12, 0.74).setStrokeStyle(1, 0x719159, 0.72),
       );
       container.add(
-        this.add.text(x - 43, y - 7, label, {
+        this.add.text(x - 43, y - 9, label, {
           color: "#dceab5",
           fontFamily: "Trebuchet MS",
           fontSize: "10px",
           fontStyle: "bold",
         }),
       );
-      container.add(this.add.rectangle(x + 14, y + 5, 54, 6, 0x263721));
-      container.add(this.add.rectangle(x - 13 + value * 5.4, y + 5, value * 10.8, 6, 0xe2d36c));
+      // Track is darker than either card variant so the empty portion always
+      // reads; the fill is brightened to a high-contrast cream-gold.
       container.add(
-        this.add.text(x + 32, y - 7, `${value}/5`, {
+        this.add.rectangle(x + 14, y + 6, 54, 10, 0x0c130d).setStrokeStyle(1, 0x4c5f3a, 0.85),
+      );
+      container.add(this.add.rectangle(x - 13 + value * 5.4, y + 6, value * 10.8, 10, 0xf3e58a));
+      container.add(
+        this.add.text(x + 32, y - 9, `${value}/5`, {
           color: "#f6f0d2",
           fontFamily: "Trebuchet MS",
           fontSize: "10px",

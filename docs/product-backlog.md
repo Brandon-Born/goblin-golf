@@ -388,18 +388,17 @@ Suggested next step:
 
 ### Flight View Course Props Look Like Rendering Artifacts
 
-Status: Open
+Status: Resolved
 
-Several mushroom and rock props in the flight view appear at y=630–730, below the green fairway rectangle and any labeled area. Against a dark background with no ground context, they read as isolated colored dots rather than course scenery.
+Several mushroom and rock props in the flight view appeared at y=630–730, below the green fairway rectangle and any labeled area. Against a dark background with no ground context, they read as isolated colored dots rather than course scenery.
 
 Evidence:
 
 - `09-flight.png` (agent visual audit, 2026-05-13)
 
-Suggested next step:
+Resolution (2026-05-29):
 
-- Extend the ground/rough area to cover all prop positions, or push props inside the fairway boundary.
-- If props intentionally sit outside the fairway (as OB scenery), add a thin ground band to anchor them visually.
+- The flight view (`HoleScene.drawCourse`) now tiles the entire play area: a top OB band, the grass fairway, and a bottom OB band sum exactly to `playHeight`. All scenery props map (via `worldToScreen`) inside `hole.bounds` → screen y in `[playTop, playBottom]`, so every prop lands on either the purple OB texture or the grass, never the bare `0x142018` background. Verified with a live flight-view capture: no floating props. The original evidence predates the full-coverage OB-band layout.
 
 ### Score Screen Hole Name Has Low Contrast Against Gold Circle
 
@@ -417,18 +416,17 @@ Suggested next step:
 
 ### Stat Bars Are Hard To Read At Small Sizes
 
-Status: Open
+Status: Resolved
 
-The stat bars on character cards are 6px tall with 54px total track. Filled vs. empty contrast is low at arm's length on a phone screen, especially for mid-range values (3/5).
+The stat bars on character cards were 6px tall with a 54px track whose dark-green fill matched the unselected card background, so the empty portion was nearly invisible and filled vs. empty contrast was low at arm's length, especially for mid-range values (3/5).
 
 Evidence:
 
 - `05-char3-selected.png` (agent visual audit, 2026-05-13)
 
-Suggested next step:
+Resolution (2026-05-29):
 
-- Increase bar height to at least 10px.
-- Use a higher-contrast fill color (brighter gold or cream against a dark track).
+- Bar height increased 6px → 10px and the stat box grew 22px → 26px to fit it. The track is now a near-black `0x0c130d` with a `0x4c5f3a` outline so the empty portion reads against both card variants, and the fill is brightened to a cream-gold `0xf3e58a`. Verified with a live character-select capture across all three goblins (e.g. 2/5 vs 5/5 are now clearly distinguishable).
 
 ### Phaser Bundle Size Warning
 
