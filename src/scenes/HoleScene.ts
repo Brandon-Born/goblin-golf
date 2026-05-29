@@ -1202,8 +1202,20 @@ export class HoleScene extends Phaser.Scene {
     );
     const tracker = { t: 0 };
 
+    // Ground shadow rides the flat path and shrinks/separates as the disc lofts,
+    // selling the height of the arc without moving the disc off its line.
+    const shadow = this.add.ellipse(start.x, start.y, 24, 11, 0x10150f, 0.34).setDepth(6);
+
+    // Motion trail: a short comet tail of recent positions that fades to the tail.
+    const trail = this.add.graphics().setDepth(7);
+    const trailPoints: Phaser.Math.Vector2[] = [];
+    const maxTrail = 16;
+
     this.flightDisc?.destroy();
     this.flightDisc = this.add.image(start.x, start.y, discKey(this.disc)).setDepth(8);
+    const disc = this.flightDisc;
+    const trailColor = result.reliefApplied ? 0xffb49e : 0xf6f0d2;
+
     this.tweens.add({
       targets: tracker,
       t: 1,
@@ -1211,24 +1223,104 @@ export class HoleScene extends Phaser.Scene {
       ease: "Sine.easeInOut",
       onUpdate: () => {
         const point = curve.getPoint(tracker.t);
-        this.flightDisc?.setPosition(point.x, point.y);
-        const arc = 1 + Math.sin(tracker.t * Math.PI) * 0.55;
-        this.flightDisc?.setScale(arc, arc * 0.85);
+        const lift = Math.sin(tracker.t * Math.PI); // 0 → 1 → 0 height factor
+        disc.setPosition(point.x, point.y);
+        const arc = 1 + lift * 0.55;
+        disc.setScale(arc, arc * 0.85);
+        disc.rotation += 0.5; // disc spin
+
+        // Shadow drops below and shrinks at apex → reads as the disc rising.
+        shadow.setPosition(point.x, point.y + lift * 28);
+        shadow.setScale(1 - lift * 0.5);
+        shadow.setAlpha(0.34 - lift * 0.18);
+
+        // Append the latest point and redraw the fading tail.
+        trailPoints.push(new Phaser.Math.Vector2(point.x, point.y));
+        if (trailPoints.length > maxTrail) trailPoints.shift();
+        trail.clear();
+        for (let i = 1; i < trailPoints.length; i += 1) {
+          const f = i / trailPoints.length;
+          trail.lineStyle(1 + f * 4, trailColor, f * 0.55);
+          trail.beginPath();
+          trail.moveTo(trailPoints[i - 1].x, trailPoints[i - 1].y);
+          trail.lineTo(trailPoints[i].x, trailPoints[i].y);
+          trail.strokePath();
+        }
       },
       onComplete: () => {
         const finalPoint = result.reliefApplied ? this.worldToScreen(result.landing) : landing;
         this.tweens.add({
-          targets: this.flightDisc,
+          targets: disc,
           x: finalPoint.x,
           y: finalPoint.y,
           scaleX: 0.9,
           scaleY: 0.75,
           duration: result.reliefApplied ? 360 : 120,
           ease: "Sine.easeOut",
-          onComplete,
+          onComplete: () => {
+            shadow.setPosition(finalPoint.x, finalPoint.y + 6).setScale(0.95).setAlpha(0.34);
+            this.tweens.add({ targets: trail, alpha: 0, duration: 240 });
+            this.playLandingImpact(finalPoint, result.reliefApplied);
+            // Hold a beat on the impact before handing control back / transitioning.
+            this.time.delayedCall(260, onComplete);
+          },
         });
       },
     });
+  }
+
+  /**
+   * Punchy landing feedback: an expanding dust ring, scattering specks, a quick
+   * settle wobble on the disc, and a brief camera shake. Relief landings hit
+   * harder and tint warm to flag the OB penalty.
+   */
+  private playLandingImpact(point: { x: number; y: number }, isRelief: boolean) {
+    const color = isRelief ? 0xff8f6b : 0xf6f0d2;
+
+    const ring = this.add
+      .circle(point.x, point.y, 8, 0x000000, 0)
+      .setStrokeStyle(3, color, 0.9)
+      .setDepth(7);
+    this.tweens.add({
+      targets: ring,
+      scaleX: 4.2,
+      scaleY: 4.2,
+      alpha: 0,
+      duration: 430,
+      ease: "Cubic.easeOut",
+      onComplete: () => ring.destroy(),
+    });
+
+    const speckCount = 7;
+    for (let i = 0; i < speckCount; i += 1) {
+      const angle = (Math.PI * 2 * i) / speckCount + Math.random() * 0.6;
+      const dist = 14 + Math.random() * 20;
+      const speck = this.add
+        .circle(point.x, point.y, 2 + Math.random() * 2, color, 0.85)
+        .setDepth(7);
+      this.tweens.add({
+        targets: speck,
+        x: point.x + Math.cos(angle) * dist,
+        y: point.y + Math.sin(angle) * dist,
+        alpha: 0,
+        scale: 0.2,
+        duration: 320 + Math.random() * 180,
+        ease: "Cubic.easeOut",
+        onComplete: () => speck.destroy(),
+      });
+    }
+
+    // Disc settles flat with a quick wobble from its spinning angle.
+    if (this.flightDisc) {
+      this.tweens.add({
+        targets: this.flightDisc,
+        angle: { from: -10, to: 0 },
+        duration: 280,
+        ease: "Back.easeOut",
+      });
+    }
+
+    this.cameras.main.shake(150, isRelief ? 0.006 : 0.0032);
   }
 
   private drawCrosshair() {
