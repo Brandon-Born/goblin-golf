@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import { describeAngle, describeDisc, gameSession } from "../game/GameSession";
 import { diceToShotInput, distanceBetween, isTapInAvailable, windClarityFromDie } from "../game/logic";
 import { ANGLE_DIAL_DEGREES, POWER_DIAL, PUTT_AIM_DIAL_PX, PUTT_POWER_DIAL, WIND_CLARITY_DIAL } from "../game/data";
-import type { DieValue, DiscType, LieQuality, PuttDiceRoll, ReleaseAngle, ShotDiceAssignment, ShotDiceRoll, ShotForecast, ShotResult, Vector2 } from "../game/types";
+import type { DieValue, DiscType, LieQuality, PuttDiceRoll, ReleaseAngle, ShotDiceAssignment, ShotDiceRoll, ShotForecast, ShotResult, Vector2, WindEffect } from "../game/types";
 import { characterTokenKey, discKey } from "./BootScene";
 
 type HoleMode = "setup" | "flight" | "putting";
@@ -293,8 +293,10 @@ export class HoleScene extends Phaser.Scene {
         x: rect.x + rect.width / 2,
         y: rect.y + rect.height / 2,
       };
-      const color = zone.id === "left-tailwind" ? 0x8fd8ff : 0xffd27a;
-      const colorHex = zone.id === "left-tailwind" ? "#8fd8ff" : "#ffd27a";
+      // Tailwinds read cool/helpful, everything else warm. Derived from the
+      // zone's effect so any hole's lanes color consistently.
+      const color = zone.effect === "tailwind" ? 0x8fd8ff : 0xffd27a;
+      const colorHex = zone.effect === "tailwind" ? "#8fd8ff" : "#ffd27a";
       const arrowImage = this.add
         .image(center.x, center.y, "wind-arrow")
         .setRotation(Phaser.Math.DegToRad(zone.directionDegrees))
@@ -1353,10 +1355,13 @@ export class HoleScene extends Phaser.Scene {
 
   private setSuggestedThrowDefaults() {
     const distance = gameSession.distanceToBasket;
+    const { puttingRange } = gameSession.hole;
     this.releaseAngle = "flat";
-    if (distance > 260) {
+    // Suggest the disc by how many putting-ranges out the basket sits, so the
+    // defaults scale with each hole rather than using tee-distance constants.
+    if (distance > puttingRange * 3) {
       this.disc = "driver";
-    } else if (distance > 150) {
+    } else if (distance > puttingRange * 2) {
       this.disc = "midrange";
     } else {
       this.disc = "putter";
@@ -1476,13 +1481,16 @@ export class HoleScene extends Phaser.Scene {
   }
 
   private windEffectDescription(forecast: ShotForecast): string {
-    if (forecast.routeWindZones.includes("left-tailwind")) {
-      return " · longer carry";
-    }
+    const effects = new Set(
+      forecast.routeWindZones
+        .map((id) => gameSession.hole.windZones?.find((zone) => zone.id === id)?.effect)
+        .filter((effect): effect is WindEffect => Boolean(effect)),
+    );
 
-    if (forecast.routeWindZones.includes("right-crosswind")) {
-      return " · push across";
-    }
+    if (effects.has("tailwind")) return " · longer carry";
+    if (effects.has("crosswind")) return " · push across";
+    if (effects.has("headwind")) return " · shorter carry";
+    if (effects.has("calm")) return " · stays steady";
 
     const wind = forecast.routeWind;
     if (wind.strength < 0.5) {

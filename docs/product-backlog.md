@@ -589,25 +589,24 @@ Implementation questions:
 
 ### Scramble Zones Have Two Sources Of Truth
 
-Status: Open
+Status: Resolved
 
-`getLieQuality()` in `logic.ts` defines the three scramble zone rectangles with inline math from `hole.bounds`. `HoleScene.drawScrambleZoneBoundaries()` copies those same coordinates to draw boundary outlines. If the course layout changes, both files need updating independently.
+`getLieQuality()` in `logic.ts` previously defined the scramble zone rectangles with inline math from `hole.bounds`, and `HoleScene.drawScrambleZoneBoundaries()` copied those coordinates.
 
-Suggested next step:
+Resolution (already in place; verified 2026-05-29):
 
-- Extract a `getScrambleZones(hole: HoleConfig): Array<{x, y, width, height}>` function from `logic.ts`.
-- Have `drawScrambleZoneBoundaries()` call that function instead of duplicating the math.
+- Scramble zones are now authored as a `scrambleZones` array of `{ id, rect }` on each `HoleConfig` in `data.ts`. Both `getLieQuality()` (logic) and `drawScrambleZoneBoundaries()` (scene) read `hole.scrambleZones` and consume `zone.rect` directly, so there is a single source of truth. No duplicated inline math remains.
 
 ### Wind Zone Effect Descriptions Keyed By Magic String ID
 
-Status: Open
+Status: Resolved
 
-`HoleScene.windEffectDescription()` identifies wind effects by checking `forecast.routeWindZones.includes("left-tailwind")` and `"right-crosswind"`. This ties UI label logic to specific string IDs from `data.ts`. Adding or renaming a zone silently stops showing the effect description.
+`HoleScene.windEffectDescription()` identified wind effects by checking `forecast.routeWindZones.includes("left-tailwind")` and `"right-crosswind"`. This tied UI label logic to specific string IDs from `data.ts`, so adding or renaming a zone silently stopped showing the effect description, and only Hole 1's two zones ever got specific copy.
 
-Suggested next step:
+Resolution (2026-05-29):
 
-- Add an `effect: "tailwind" | "crosswind" | "headwind"` field to `WindZone` in `types.ts`.
-- Derive the effect description from `zone.effect` instead of matching on `zone.id`.
+- Added a `WindEffect = "tailwind" | "crosswind" | "headwind" | "calm"` type and a required `effect` field on `WindZone` (`types.ts`). The `"calm"` value was needed for Hole 4's Calm Pocket. Every zone across all nine holes now declares its effect in `data.ts`.
+- `windEffectDescription()` derives copy from the route zones' `effect` values (`longer carry` / `push across` / `shorter carry` / `stays steady`), and `drawWindZones()` colors lanes by `zone.effect === "tailwind"`. As a side benefit every hole's lanes now get correct effect copy and consistent coloring (tailwinds on holes 3/7/9 now read blue), not just Hole 1.
 
 ### HoleScene Is A 1300-Line God Object
 
@@ -627,13 +626,13 @@ Suggested next step:
 
 ### `setSuggestedThrowDefaults` Uses Magic Distance Thresholds
 
-Status: Open
+Status: Resolved
 
-The distance thresholds in `setSuggestedThrowDefaults` (470, 260, 150) are unrelated to any `HoleConfig` field and don't scale with the course. They were tuned for Hole 1 and will need manual adjustment for every new hole.
+The distance thresholds in `setSuggestedThrowDefaults` (260, 150) were unrelated to any `HoleConfig` field and did not scale with the course; they were tuned for Hole 1.
 
-Suggested next step:
+Resolution (2026-05-29):
 
-- Express thresholds as fractions of `hole.bounds.height` or multiples of `hole.puttingRange` so they derive from the hole data rather than being hardcoded.
+- The suggested disc is now chosen by how many `puttingRange` units the basket sits out: driver beyond `puttingRange * 3`, midrange beyond `puttingRange * 2`, putter otherwise. With Hole 1's `puttingRange` of 90 px the thresholds (270 / 180) closely track the old constants, and they now scale automatically with each hole's configured range. Full e2e suite still green.
 
 ### E2e Tests Drifted From Production Code
 

@@ -92,6 +92,7 @@ export const HOLE_1: HoleConfig = {
     {
       id: "left-tailwind",
       label: "Moss Tailwind",
+      effect: "tailwind",
       rect: { x: 80, y: 36, width: 200, height: 160 },
       directionDegrees: 0,
       strength: 1.7,
@@ -99,6 +100,7 @@ export const HOLE_1: HoleConfig = {
     {
       id: "right-crosswind",
       label: "Ruin Crosswind",
+      effect: "crosswind",
       rect: { x: 170, y: 28, width: 160, height: 120 },
       directionDegrees: 90,
       strength: 2.1,
@@ -178,6 +180,7 @@ const HOLE_3: HoleConfig = {
     {
       id: "bend-tailwind",
       label: "Bramble Tailwind",
+      effect: "tailwind",
       rect: { x: 420, y: 80, width: 280, height: 160 },
       directionDegrees: 12,
       strength: 1.8,
@@ -213,6 +216,7 @@ const HOLE_4: HoleConfig = {
     {
       id: "howl-headwind",
       label: "Hollow Headwind",
+      effect: "headwind",
       rect: { x: 280, y: 80, width: 280, height: 200 },
       directionDegrees: 180,
       strength: 2.8,
@@ -220,6 +224,7 @@ const HOLE_4: HoleConfig = {
     {
       id: "howl-pocket",
       label: "Calm Pocket",
+      effect: "calm",
       rect: { x: 600, y: 70, width: 200, height: 110 },
       directionDegrees: 350,
       strength: 0.8,
@@ -252,6 +257,7 @@ const HOLE_5: HoleConfig = {
     {
       id: "gauntlet-side",
       label: "Side Drift",
+      effect: "crosswind",
       rect: { x: 480, y: 30, width: 220, height: 130 },
       directionDegrees: 110,
       strength: 1.4,
@@ -293,6 +299,7 @@ const HOLE_6: HoleConfig = {
     {
       id: "canyon-cross",
       label: "Canyon Crosswind",
+      effect: "crosswind",
       rect: { x: 260, y: 60, width: 340, height: 240 },
       directionDegrees: 90,
       strength: 3.2,
@@ -328,6 +335,7 @@ const HOLE_7: HoleConfig = {
     {
       id: "forking-upper-tailwind",
       label: "Upper Tailwind",
+      effect: "tailwind",
       rect: { x: 250, y: 40, width: 400, height: 110 },
       directionDegrees: 5,
       strength: 2.4,
@@ -335,6 +343,7 @@ const HOLE_7: HoleConfig = {
     {
       id: "forking-lower-cross",
       label: "Lower Crosswind",
+      effect: "crosswind",
       rect: { x: 250, y: 220, width: 400, height: 100 },
       directionDegrees: 75,
       strength: 2.0,
@@ -372,6 +381,7 @@ const HOLE_8: HoleConfig = {
     {
       id: "spore-drift",
       label: "Spore Drift",
+      effect: "crosswind",
       rect: { x: 300, y: 100, width: 240, height: 160 },
       directionDegrees: 60,
       strength: 1.4,
@@ -413,6 +423,7 @@ const HOLE_9: HoleConfig = {
     {
       id: "cliff-boost",
       label: "Cliffside Boost",
+      effect: "tailwind",
       rect: { x: 280, y: 140, width: 230, height: 130 },
       directionDegrees: 340,
       strength: 2.6,
@@ -420,6 +431,7 @@ const HOLE_9: HoleConfig = {
     {
       id: "cliff-cross",
       label: "Summit Crosswind",
+      effect: "crosswind",
       rect: { x: 550, y: 40, width: 260, height: 130 },
       directionDegrees: 100,
       strength: 1.9,

@@ -45,9 +45,13 @@ export interface Rect {
   height: number;
 }
 
+/** How a wind zone plays, independent of its id. Drives UI color and effect copy. */
+export type WindEffect = "tailwind" | "crosswind" | "headwind" | "calm";
+
 export interface WindZone extends Wind {
   id: string;
   label: string;
+  effect: WindEffect;
   rect: Rect;
 }
 
