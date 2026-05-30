@@ -35,7 +35,7 @@ The codebase is split into three layers that communicate in one direction:
 
 **Pure game logic** (`src/game/`) — no Phaser imports except in `GameSession.ts` (one `Phaser.Math.Clamp` call):
 - `types.ts` — all shared interfaces and union types (`ShotInput`, `ShotResult`, `ShotForecast`, `HoleState`, etc.)
-- `data.ts` — static game data (`CHARACTERS`, `DISCS`, `HOLE_1`) plus validation helpers
+- `data.ts` — static game data (`CHARACTERS`, `DISCS`, and the nine-hole `HOLES` array — `HOLE_1` … `HOLE_9`) plus validation helpers
 - `logic.ts` — deterministic, stateless shot physics and scoring functions (`calculateShot`, `calculateShotForecast`, `applyShotResult`, `getLieQuality`, etc.)
 - `GameSession.ts` — mutable round state; wraps logic functions and exposes `throwDisc`, `putt`, `forecastThrow`, `mode`, etc. Exports a singleton `gameSession`.
 

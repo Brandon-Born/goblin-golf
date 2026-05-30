@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Goblin Golf is a browser disc golf game built with Vite, TypeScript, and Phaser. The current prototype targets a **landscape desktop viewport (1280×720)** and is a playable vertical slice: title screen, character select, one fantasy disc golf hole, throw setup, flight resolution, OB relief, putting, scoring, and replay.
+Goblin Golf is a browser disc golf game built with Vite, TypeScript, and Phaser. The current prototype targets a **landscape desktop viewport (1280×720)** and plays a full **nine-hole round** (par 30): title screen, character select, then per-hole throw setup, flight resolution, OB relief, and putting — advancing tee-to-tee through an intermission scorecard to a final round summary and replay. It grew out of a single-hole vertical slice; the holes share one playfield footprint (`COURSE_BOUNDS`) and differ by tee/basket placement, wind lanes, and scramble zones.
 
 The target feel is playful but strategic. The game should stay readable and approachable while still rewarding deliberate shot planning. It should not rely on timing-based release mechanics. Skill should come from reading the course, choosing a route, managing uncertainty, selecting discs, shaping release angle, and placing the disc for the next lie.
 
@@ -21,17 +21,17 @@ The backlog is the source of truth for known product work. If a playtest reveals
 
 ## Current Gameplay Shape
 
-The first hole is `Ruincap Run`.
+The course is nine holes (`HOLES` in `data.ts`), opening on `Ruincap Run`: Ruincap Run, Toadstool Twist, Brittlebark Bend, Hollow Howl, Ruin Gauntlet, Crossgust Canyon, Forking Paths, Spore Ring, and Champion's Cliff (par 30 total). `GameSession` tracks `currentHoleIndex` and `holeScores`; `advanceHole()` records the finished hole and moves to the next tee.
 
-Core loop:
+Per-hole core loop:
 
-- Pick one of three goblins.
+- Pick one of three goblins (once, at the start of the round).
 - Read the lie, wind lane, risk, and forecast zone.
 - Choose disc, release angle, aim, and power.
 - Throw from the current lie.
 - Resolve legal landing, OB penalty, or relief.
 - Enter putting mode near the basket.
-- Finish the hole and view the score summary.
+- Finish the hole; see the intermission scorecard, then play on. After hole 9, view the final round summary and replay.
 
 Important design choices:
 
@@ -44,7 +44,7 @@ Important design choices:
 ## Code Map
 
 - `src/game/types.ts` - shared gameplay types.
-- `src/game/data.ts` - characters, discs, hole config, wind zones.
+- `src/game/data.ts` - characters, discs, the nine-hole `HOLES` array (wind zones, scramble zones, scenery), plus validation helpers.
 - `src/game/logic.ts` - deterministic rules, shot physics, forecasts, lie quality, relief, scoring helpers.
 - `src/game/GameSession.ts` - mutable round/session state and putting resolution.
 - `src/scenes/TitleScene.ts` - title screen.
@@ -67,12 +67,14 @@ Important design choices:
 
 ## Known Highest-Priority Issues
 
-See `docs/product-backlog.md` for details. Current major issues include:
+See `docs/product-backlog.md` for details. The earlier P0–P2 issues (label overflow, risky default first shot, unclear wind-lane language, oversized first-drive forecast uncertainty) are now resolved. No progression blockers or major usability issues are open.
 
-- Forecast and course labels can overflow, clip, or overlap.
-- Default first shot can read as high risk.
-- Wind-lane language needs to explain what the lane does.
-- Forecast uncertainty may be too large on first-drive defaults.
+Remaining work is P3 — technical debt, code-health refactors, and future design:
+
+- Add `npm run test:e2e:server` to CI so e2e drift is caught on every PR.
+- Refactor opportunities: split the ~1600-line `HoleScene`; de-duplicate the setup/flight playfield tiling; make the rough band a per-hole `HoleConfig` field; vary per-hole playfield footprint (all nine currently share `COURSE_BOUNDS`).
+- Future hazards designed but not built: Hex Spiral (vortex) and Runic Maw (gravity well).
+- The nine holes are functional but have not had the per-hole playtest/polish pass that Hole 1 received.
 
 ## Verification
 

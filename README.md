@@ -1,6 +1,6 @@
 # Goblin Golf
 
-Goblin Golf is a lighthearted web-based disc golf game concept about mischievous goblins competing across fantasy courses. The initial proof of concept focuses on a title screen, three playable goblins, and one playable hole that demonstrates the core shot loop.
+Goblin Golf is a lighthearted web-based disc golf game concept about mischievous goblins competing across fantasy courses. It currently plays as a full nine-hole round: a title screen, three playable goblins, and nine holes (par 30) with hole-to-hole progression, an intermission scorecard, and a final round summary. The proof of concept began as a single hole demonstrating the core shot loop, documented in the planning briefs below.
 
 The intended feel is playful and approachable, with arcade sports energy: readable controls, expressive characters, surprising course hazards, and enough shot strategy to make each throw feel intentional.
 

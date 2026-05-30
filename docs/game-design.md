@@ -64,6 +64,6 @@ The first proof of concept is successful if it demonstrates:
 - Hyzer/anhyzer angle is understandable through flight behavior.
 - Shot execution is accessible and does not depend on timing-based release mechanics.
 - Putting feels like a distinct crosshair-and-power mode rather than a shorter version of driving.
-- One hole can be completed from title screen to score summary.
+- A full nine-hole round can be completed from title screen to the final score summary, with an intermission scorecard between holes.
 - Competitive disc golf basics are respected, especially stroke count, lie, par, OB, relief, and holing out.
 - The art direction reads as polished pixel art on a mobile screen.

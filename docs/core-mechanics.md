@@ -151,13 +151,13 @@ Stats should be simple enough to display during character select and meaningful 
 
 ## Scoring
 
-The first hole should use familiar golf scoring:
+Holes use familiar golf scoring:
 
 - Each throw adds one stroke.
 - The hole ends when the disc lands in the basket.
-- Display strokes and relation to par.
+- Display strokes and relation to par, both per hole and cumulatively across the round.
 
-For the first prototype, use one par value for the single hole. Par 3 is recommended.
+The course is nine holes with mixed pars (par 3 and par 4, par 30 total). Each hole declares its own `par` in `HoleConfig`; the round summary totals strokes against total par. (The original single-hole prototype used one par-3 hole.)
 
 ## Rules Fidelity
 

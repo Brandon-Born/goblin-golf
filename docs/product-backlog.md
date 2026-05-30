@@ -6,15 +6,13 @@ This backlog tracks known product, UX, gameplay, and technical issues from the c
 
 No known P0 blockers.
 
-The current prototype can complete the main flow:
+The prototype plays a full nine-hole round (par 30) end to end:
 
 - title
 - character select
-- throw setup
-- flight and lie resolution
-- OB relief
-- putting
-- score summary
+- per hole: throw setup → flight and lie resolution → OB relief → putting
+- intermission scorecard between holes (`advanceHole()` moves to the next tee)
+- final round summary after hole 9
 - replay
 
 ## P1 - Major Usability Issues
@@ -608,21 +606,21 @@ Resolution (2026-05-29):
 - Added a `WindEffect = "tailwind" | "crosswind" | "headwind" | "calm"` type and a required `effect` field on `WindZone` (`types.ts`). The `"calm"` value was needed for Hole 4's Calm Pocket. Every zone across all nine holes now declares its effect in `data.ts`.
 - `windEffectDescription()` derives copy from the route zones' `effect` values (`longer carry` / `push across` / `shorter carry` / `stays steady`), and `drawWindZones()` colors lanes by `zone.effect === "tailwind"`. As a side benefit every hole's lanes now get correct effect copy and consistent coloring (tailwinds on holes 3/7/9 now read blue), not just Hole 1.
 
-### HoleScene Is A 1300-Line God Object
+### HoleScene Is A ~1600-Line God Object
 
 Status: Open
 
-`HoleScene` handles Phaser canvas rendering, DOM overlay construction, pointer input, tweens, and mode-switching (setup/flight/putting) in a single class. The three modes are interleaved enough that touching flight code requires navigating past putting code, and the class has grown fragile to extend.
+`HoleScene` (now ~1585 lines) handles Phaser canvas rendering, DOM overlay construction, pointer input, tweens, and mode-switching (setup/flight/putting) in a single class. The three modes are interleaved enough that touching flight code requires navigating past putting code, and the class has grown fragile to extend.
 
 Impact:
 
 - Hard to reason about which state is active when reading any given method.
-- Any new mode or mechanic (e.g. a second hole, a new hazard interaction) will make the class larger still.
+- Any new mechanic (a new hazard interaction, the planned vortex/gravity-well features) will make the class larger still.
 
 Suggested next step:
 
 - Split into: a `HoleRenderer` (Phaser canvas drawing only), a `HoleOverlay` (DOM controls only), and a thin `HoleScene` coordinator that owns mode state and delegates to both.
-- Defer until a second hole is being built — the split is not worth the disruption while only one hole exists.
+- The original "defer until a second hole exists" rationale no longer applies — the full nine-hole course shipped and all holes reuse this one scene, so the split is now justified. It is still a large, disruptive change; sequence it before the next hazard-mechanic work rather than alongside a feature.
 
 ### `setSuggestedThrowDefaults` Uses Magic Distance Thresholds
 
@@ -644,6 +642,36 @@ Suggested next step:
 
 - Add `npm run test:e2e:server` to the CI pipeline so e2e tests run on every PR.
 - Consider lightweight DOM smoke assertions in `expectSetupStateReadouts` tied to CSS class names rather than display strings, so they survive label copy changes.
+
+### Playfield Tiling Is Duplicated Between Setup And Flight Views
+
+Status: Open
+
+`HoleScene.drawSetupView()` and `HoleScene.drawCourse()` each independently compute `obH = (playHeight - fairwayH) / 2` and lay down the same background fill, top/bottom OB tile bands, grass fairway tile, fairway border, and two "OB" labels. The two copies differ only cosmetically (OB tile alpha 0.92 vs 0.85; OB label font 18px vs 14px; label x-offset 50 vs 40). A layout change to the play area must be made in both places.
+
+Suggested next step:
+
+- Extract a `drawPlayfieldBands(opts)` helper that draws the background, OB bands, fairway, border, and OB labels, taking the few cosmetic differences as parameters. Have both views call it.
+
+### Rough/Fairway Band Uses An Inline Magic Constant
+
+Status: Open
+
+`getLieQuality()` in `logic.ts` derives the rough-vs-fairway split from `hole.bounds.height * 0.28` (a `fairwayHalfHeight`) inline. Unlike scramble zones — which are now authored per hole as `hole.scrambleZones` — the rough band is hardcoded and identical for every hole, so it cannot be tuned per hole and the `0.28` is unexplained.
+
+Suggested next step:
+
+- Express the fairway band as a configurable field on `HoleConfig` (e.g. `fairwayBand: number` as a fraction of bounds height, defaulting to 0.28), mirroring how `scrambleZones` are authored, so lie quality scales and tunes per hole.
+
+### All Nine Holes Share One Playfield Footprint
+
+Status: Open
+
+Every hole in `HOLES` reuses the same `COURSE_BOUNDS` (864×312); holes differ only by tee/basket placement, wind lanes, and scramble zones. The nine holes are mechanically distinct but visually framed identically, which limits the sense of a varied course.
+
+Suggested next step:
+
+- Allow per-hole `bounds` (already a `HoleConfig` field — most holes just point at the shared `COURSE_BOUNDS` constant) to vary, and/or introduce non-rectangular fairway shaping, so later holes can feel spatially different. Design-gated; pair with the hazard-mechanic work.
 
 ## Recently Resolved
 
